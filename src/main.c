@@ -56,7 +56,14 @@ void read_file(const char* filename, char** output, size_t* filesize) {
 
 void usage() {
     printf("Prior Compiler\n\n");
-    printf("No source files specified.\n");
+    // printf("No source files specified.\n");
+    printf("Commands:\n");
+    printf("    compile <file> - Compiles a file into bytecode out.prb\n");
+    printf("        --p-stages - Print the stages of the compiling process\n");
+    printf("        --p-tokens - Print the tokens of the code\n");
+    printf("        --p-ast    - Print the AST of the code\n");
+    printf("        --p-bytecode - Print the bytecode result\n");
+    printf("    run <file> - Start a VM and runs the bytecode file\n");
 }
 
 void compile(int32_t argc, char* argv[]) {

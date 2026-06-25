@@ -1,1 +1,1 @@
-gcc src/*.c -Isrc -Wall -g $*
+gcc src/*.c -Isrc -Wall -o prior -g $*
