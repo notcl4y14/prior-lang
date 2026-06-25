@@ -28,6 +28,8 @@ const char* OpCodeNames[] = {
     [OP_FSUB] = "FSUB",
     [OP_FMUL] = "FMUL",
     [OP_FDIV] = "FDIV",
+    [OP_INC]  = "INC",
+    [OP_DEC]  = "DEC",
     [OP_AND]  = "AND",
     [OP_OR]   = "OR",
     [OP_XOR]  = "XOR",
@@ -106,6 +108,12 @@ void print_bytecode(Bytecode* bc) {
                 break;
 
             case OP_FDIV:
+                break;
+
+            case OP_INC:
+                break;
+
+            case OP_DEC:
                 break;
 
             default:
@@ -201,10 +209,48 @@ void bytegen_handle_bin_expr(Bytegen* bg, Node node) {
     }
 }
 
+void bytegen_handle_update_expr(Bytegen* bg, Node node) {
+    NodeUpdateExprData* data = (NodeUpdateExprData*) node.pool_ptr;
+    TokenType update_op = data->op;
+
+    // I doubt that this is going to work
+
+    /***
+     * ++i/--i
+     */
+    if (data->prefix) {
+        bytegen_handle_node(bg, data->expr);
+
+        if (update_op == TT_INCREMENT) {
+            bytegen_emit_byte(bg, OP_INC);
+        } else if (update_op == TT_DECREMENT) {
+            bytegen_emit_byte(bg, OP_DEC);
+        }
+
+        bytegen_handle_node(bg, data->expr);
+    }
+    /***
+     * i++/i--
+     */
+    else {
+        bytegen_handle_node(bg, data->expr);
+
+        if (update_op == TT_INCREMENT) {
+            bytegen_emit_byte(bg, OP_INC);
+        } else if (update_op == TT_DECREMENT) {
+            bytegen_emit_byte(bg, OP_DEC);
+        }
+    }
+}
+
 void bytegen_handle_node(Bytegen* bg, Node node) {
     switch (node.type) {
         case NT_BIN_EXPR:
             bytegen_handle_bin_expr(bg, node);
+            break;
+
+        case NT_UPDATE_EXPR:
+            bytegen_handle_update_expr(bg, node);
             break;
 
         case NT_INTEGER_LIT:

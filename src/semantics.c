@@ -37,8 +37,6 @@ ValueType process_bin_expr(Semantics* s, Node node) {
     ValueType right_type = process_node(s, right);
 
     if (left_type != right_type) {
-        // printf("Cast the value buddy\n");
-        // exit(1);
         sprintf(s->errmsg, "Cannot do an arithmetical expression with %s and %s", ValueTypeNames[left_type], ValueTypeNames[right_type]);
         s->error = true;
 
@@ -48,6 +46,13 @@ ValueType process_bin_expr(Semantics* s, Node node) {
     data->return_type = left_type;
 
     return left_type;
+}
+
+ValueType process_update_expr(Semantics* s, Node node) {
+    NodeUpdateExprData* data = (NodeUpdateExprData*) node.pool_ptr;
+    data->return_type = process_node(s, data->expr);
+
+    return data->return_type;
 }
 
 ValueType process_node(Semantics* s, Node node) {
@@ -60,6 +65,9 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_BIN_EXPR:
             return process_bin_expr(s, node);
+
+        case NT_UPDATE_EXPR:
+            return process_update_expr(s, node);
 
         default:
             assert(false);

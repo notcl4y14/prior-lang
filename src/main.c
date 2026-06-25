@@ -202,12 +202,12 @@ void run(int32_t argc, char* argv[]) {
         printf("Runtime error: Division by zero\n");
     }
 
-    // printf("Last stack value: [%d, %d, %d, %d]\n",
-    //     *(int32_t*) &vm.stack[0],
-    //     *(int32_t*) &vm.stack[4],
-    //     *(int32_t*) &vm.stack[8],
-    //     *(int32_t*) &vm.stack[12]
-    // );
+    printf("Last stack value: [%d, %d, %d, %d]\n",
+        *(int32_t*) &vm.stack[0],
+        *(int32_t*) &vm.stack[4],
+        *(int32_t*) &vm.stack[8],
+        *(int32_t*) &vm.stack[12]
+    );
 
     printf("Last int stack value: %d\n", *(int32_t*) &vm.stack[0]);
     printf("Last float stack value: %f\n", *(float*) &vm.stack[0]);

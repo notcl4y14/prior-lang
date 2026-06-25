@@ -141,6 +141,8 @@ typedef struct NodeUpdateExprData {
     TokenType op;
     bool      prefix;
     Node      expr;
+
+    ValueType return_type;
 } NodeUpdateExprData;
 
 typedef struct NodeCallExprData {

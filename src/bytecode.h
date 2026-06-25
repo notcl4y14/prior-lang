@@ -24,6 +24,8 @@ typedef enum OpCode {
     OP_DIV,  // divide
     OP_UMUL, // unsigned mul
     OP_UDIV, // unsigned div
+    OP_INC,  // increment
+    OP_DEC,  // decrement
 
     OP_FADD, // float add
     OP_FSUB, // float subtract

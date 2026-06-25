@@ -15,5 +15,7 @@ void opcode_fadd_func(VM* vm);
 void opcode_fsub_func(VM* vm);
 void opcode_fmul_func(VM* vm);
 void opcode_fdiv_func(VM* vm);
+void opcode_inc_func(VM* vm);
+void opcode_dec_func(VM* vm);
 
 #endif

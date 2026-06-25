@@ -6,21 +6,11 @@
 void opcode_psh_func(VM* vm) {
     vm->code_pointer++;
     uint8_t push_size = vm->code.bytes[vm->code_pointer++];
-    uint8_t* value = &vm->code.bytes[vm->code_pointer + 1];
+    uint8_t* value = &vm->code.bytes[vm->code_pointer];
 
     push_vm(vm, value, push_size);
     vm->code_pointer += push_size;
-
-    // printf("%.2f\n", *(float*) value);
-
-    // vm->stack[vm->stack_pointer++] = value[0];
-    // vm->stack[vm->stack_pointer++] = value[1];
-    // vm->stack[vm->stack_pointer++] = value[2];
-    // vm->stack[vm->stack_pointer++] = value[3];
-
-    // printf("%.2f\n", *(float*) &vm->stack[vm->stack_pointer - 4]);
-
-    // push_vm(vm, *(uint32_t*) value);
+    // printf("%d %s\n", vm->code_pointer, OpCodeNames[vm->code.bytes[vm->code_pointer]]);
 }
 
 void opcode_pop_func(VM* vm) {
@@ -28,9 +18,6 @@ void opcode_pop_func(VM* vm) {
     uint8_t pop_size = vm->code.bytes[vm->code_pointer++];
 
     pop_vm(vm, pop_size);
-
-    // vm->stack_pointer -= 4;
-    // vm->code_pointer += 5;
 }
 
 void opcode_add_func(VM* vm) {
@@ -150,4 +137,22 @@ void opcode_fdiv_func(VM* vm) {
 
     float result = value1 / value2;
     push_vm(vm, (uint8_t*) &result, sizeof(float));
+}
+
+void opcode_inc_func(VM* vm) {
+    vm->code_pointer++;
+
+    uint32_t value = *(uint32_t*) pop_vm(vm, sizeof(uint32_t));
+    value++;
+
+    push_vm(vm, (uint8_t*) &value, sizeof(uint32_t));
+}
+
+void opcode_dec_func(VM* vm) {
+    vm->code_pointer++;
+
+    uint32_t value = *(uint32_t*) pop_vm(vm, sizeof(uint32_t));
+    value--;
+
+    push_vm(vm, (uint8_t*) &value, sizeof(uint32_t));
 }
