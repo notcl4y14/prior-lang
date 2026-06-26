@@ -2,6 +2,7 @@
 #include <opcode.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 void opcode_psh_func(VM* vm) {
     vm->code_pointer++;
@@ -18,6 +19,25 @@ void opcode_pop_func(VM* vm) {
     uint8_t pop_size = vm->code.bytes[vm->code_pointer++];
 
     pop_vm(vm, pop_size);
+}
+
+void opcode_load_func(VM* vm) {
+    vm->code_pointer++;
+    uint8_t index = vm->code.bytes[vm->code_pointer++];
+    uint32_t load_size = *(uint32_t*) &vm->code.bytes[vm->code_pointer];
+    vm->code_pointer += 4;
+
+    push_vm(vm, &vm->storage[index * 4], load_size);
+}
+
+void opcode_stor_func(VM* vm) {
+    vm->code_pointer++;
+    uint8_t index = vm->code.bytes[vm->code_pointer++];
+    uint32_t load_size = *(uint32_t*) &vm->code.bytes[vm->code_pointer];
+    vm->code_pointer += 4;
+
+    uint32_t value = *(uint32_t*) pop_vm(vm, load_size);
+    memcpy(&vm->storage[index * 4], &value, load_size);
 }
 
 void opcode_add_func(VM* vm) {

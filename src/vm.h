@@ -17,6 +17,8 @@ typedef struct VM {
     uint8_t  stack[STACK_SIZE];
     uint32_t stack_pointer;
 
+    uint8_t storage[256];
+
     bool    running;
     uint8_t errcode;
 } VM;

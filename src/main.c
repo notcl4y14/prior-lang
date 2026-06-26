@@ -1,3 +1,4 @@
+#include "interp.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <vm.h>
@@ -66,6 +67,7 @@ void usage() {
     printf("        --p-bytecode - Print the bytecode result\n");
     printf("        --no-semantics - Disable semantics (type checking)\n");
     printf("    run <file> - Start a VM and runs the bytecode file\n");
+    printf("    interpret <file> - Interpret and run the file\n");
 }
 
 void compile(int32_t argc, char* argv[]) {
@@ -215,6 +217,68 @@ void run(int32_t argc, char* argv[]) {
     free_bytecode(&bytecode);
 }
 
+void interpret(int32_t argc, char* argv[]) {
+    /* Lexer Stage */
+    char* filename = argv[2];
+    char* lexer_code = NULL;
+    size_t file_size = 0;
+
+    read_file(filename, &lexer_code, &file_size);
+    lexer_code[file_size] = 0;
+
+
+
+    Lexer lexer = create_lexer();
+    load_lexer_code(&lexer, lexer_code, file_size);
+
+    TokenArray token_array = lexer_tokenize(&lexer);
+
+
+
+    /* Parser Stage */
+    Parser parser = create_parser(&token_array);
+    Node result = parse_tokens(&parser);
+
+    if (parser.error) {
+        printf("%ld:%ld: %s\n", parser.errpos.line + 1, parser.errpos.column + 1, parser_get_error(&parser));
+
+        free_node_pool(&parser.node_pool);
+        free_token_array(&token_array);
+        free_lexer(&lexer);
+
+        free(lexer_code);
+        lexer_code = NULL;
+        return;
+    }
+
+    /* Semantics Stage */
+    Semantics semantics = create_semantics();
+    process_semantics(&semantics, result);
+
+    if (semantics.error) {
+        printf("%s\n", get_semantics_error(&semantics));
+
+        free_node_pool(&parser.node_pool);
+        free_token_array(&token_array);
+        free_lexer(&lexer);
+
+        free(lexer_code);
+        lexer_code = NULL;
+        return;
+    }
+
+    Interpreter interp = create_interpreter(result);
+    run_interpreter(&interp);
+
+    free_interpreter(&interp);
+    free_node_pool(&parser.node_pool);
+    free_token_array(&token_array);
+    free_lexer(&lexer);
+
+    free(lexer_code);
+    lexer_code = NULL;
+}
+
 int32_t main(int32_t argc, char* argv[]) {
     /* subtracting the count by 1 because the first arg is executable */
     int32_t argument_count = argc - 1;
@@ -228,6 +292,8 @@ int32_t main(int32_t argc, char* argv[]) {
         compile(argc, argv);
     } else if (strcmp(argv[1], "run") == 0) {
         run(argc, argv);
+    } else if (strcmp(argv[1], "interpret") == 0) {
+        interpret(argc, argv);
     } else {
         printf("Unknown command %s\n", argv[1]);
     }

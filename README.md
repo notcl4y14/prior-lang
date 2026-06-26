@@ -2,7 +2,7 @@
 
 The Prior programming language. Prior is a metaprogrammable statically-typed system programming language that enables the use of runtime modifications (A.K.A Runtime Metaprogramming) while also designed to be *yet another improvement to the C programming language*.
 
-The current state of the program is only a basic bytecode generator and a VM. Assembly Generation is planned.
+Currently the compiler will NOT be a compiler until the language's lexing, parsing and logical structures are proven to be stable. For now the language is run by an interpreter. When the time comes, the development of the actual compiler (assembly generation) will begin.
 
 ## Hello World
 

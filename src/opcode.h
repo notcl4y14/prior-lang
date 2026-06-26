@@ -5,6 +5,8 @@
 
 void opcode_psh_func(VM* vm);
 void opcode_pop_func(VM* vm);
+void opcode_load_func(VM* vm);
+void opcode_stor_func(VM* vm);
 void opcode_add_func(VM* vm);
 void opcode_sub_func(VM* vm);
 void opcode_mul_func(VM* vm);

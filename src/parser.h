@@ -74,6 +74,8 @@ typedef struct NodeVarStatData {
     Node ident;
     Node type;
     Node value;
+
+    ValueType return_type;
 } NodeVarStatData;
 
 typedef struct NodeEnumData {

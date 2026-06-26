@@ -70,14 +70,34 @@ void print_bytecode(Bytecode* bc) {
                 uint8_t push_size = bc->bytes[++i];
                 printf("%d", push_size);
 
-                for (int32_t j = 0; j < push_size; ++j) {
-                    printf(" %.2X", bc->bytes[++i]);
-                }
+                // for (int32_t j = 0; j < push_size; ++j) {
+                //     printf(" %.2X", bc->bytes[++i]);
+                // }
+                printf(", 0x%.8X", *(uint32_t*) &bc->bytes[++i]);
+                i += 3;
             } break;
 
             case OP_POP: {
                 uint8_t pop_size = bc->bytes[++i];
                 printf("%d", pop_size);
+            } break;
+
+            case OP_STOR: {
+                uint8_t index = bc->bytes[++i];
+                uint32_t store_size = *(uint32_t*) &bc->bytes[++i];
+                printf("%d, %d", index, store_size);
+                i += 3;
+
+                // for (int32_t j = 0; j < sizeof(uint32_t); ++j) {
+                //     printf(" %.2X", bc->bytes[++i]);
+                // }
+            } break;
+
+            case OP_LOAD: {
+                uint8_t index = bc->bytes[++i];
+                uint32_t load_size = *(uint32_t*) &bc->bytes[++i];
+                printf("%d, %d", index, load_size);
+                i += 3;
             } break;
 
             case OP_ADD:
@@ -138,6 +158,22 @@ void bytegen_emit_bytes(Bytegen* bg, uint8_t* bytes, size_t size) {
     bg->result.count += size;
 }
 
+void bytegen_handle_var_stat(Bytegen* bg, Node node) {
+    NodeVarStatData* data = (NodeVarStatData*) node.pool_ptr;
+
+    uint32_t size = sizeof(uint32_t);
+    bytegen_handle_node(bg, data->value);
+    char* name = ((NodeLiteralData*)(data->ident.pool_ptr))->value;
+
+    bytegen_emit_byte(bg, OP_STOR);
+    bytegen_emit_byte(bg, bg->store_poiner);
+    bytegen_emit_bytes(bg, (uint8_t*) &size, sizeof(uint32_t));
+
+    bg->store_equals[bg->store_poiner] = name;
+
+    bg->store_poiner++;
+}
+
 void bytegen_handle_integer(Bytegen* bg, Node node) {
     NodeLiteralData* data = (NodeLiteralData*) node.pool_ptr;
 
@@ -160,6 +196,25 @@ void bytegen_handle_float(Bytegen* bg, Node node) {
     bytegen_emit_byte(bg, OP_PSH);
     bytegen_emit_byte(bg, sizeof(uint32_t));
     bytegen_emit_bytes(bg, bytes, sizeof(uint32_t));
+}
+
+void bytegen_handle_ident(Bytegen* bg, Node node) {
+    NodeLiteralData* data = (NodeLiteralData*) node.pool_ptr;
+
+    uint32_t index = 0;
+
+    for (int32_t i = 0; i < 256; ++i) {
+        if (strcmp(bg->store_equals[i], data->value) == 0) {
+            index = i;
+            break;
+        }
+    }
+
+    uint32_t size = sizeof(uint32_t);
+
+    bytegen_emit_byte(bg, OP_LOAD);
+    bytegen_emit_byte(bg, index);
+    bytegen_emit_bytes(bg, (uint8_t*) &size, sizeof(uint32_t));
 }
 
 void bytegen_handle_bin_expr(Bytegen* bg, Node node) {
@@ -214,6 +269,7 @@ void bytegen_handle_update_expr(Bytegen* bg, Node node) {
     TokenType update_op = data->op;
 
     // I doubt that this is going to work
+    // TODO: Fix prefixed inc/dec not ordering properly
 
     /***
      * ++i/--i
@@ -227,6 +283,7 @@ void bytegen_handle_update_expr(Bytegen* bg, Node node) {
             bytegen_emit_byte(bg, OP_DEC);
         }
 
+        // TODO: Fix prefixed inc/dec not ordering properly
         bytegen_handle_node(bg, data->expr);
     }
     /***
@@ -245,6 +302,10 @@ void bytegen_handle_update_expr(Bytegen* bg, Node node) {
 
 void bytegen_handle_node(Bytegen* bg, Node node) {
     switch (node.type) {
+        case NT_VAR_STAT:
+            bytegen_handle_var_stat(bg, node);
+            break;
+
         case NT_BIN_EXPR:
             bytegen_handle_bin_expr(bg, node);
             break;
@@ -259,6 +320,10 @@ void bytegen_handle_node(Bytegen* bg, Node node) {
 
         case NT_FLOAT_LIT:
             bytegen_handle_float(bg, node);
+            break;
+
+        case NT_IDENT_LIT:
+            bytegen_handle_ident(bg, node);
             break;
 
         default:

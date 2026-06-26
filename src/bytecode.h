@@ -62,6 +62,8 @@ void print_bytecode(Bytecode* bc);
 typedef struct Bytegen {
     Node     ast;
     Bytecode result;
+    uint32_t store_poiner;
+    char*    store_equals[256];
 } Bytegen;
 
 void init_bytegen(Bytegen* bg, Node ast);

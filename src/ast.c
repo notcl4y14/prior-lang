@@ -317,9 +317,16 @@ Node parse_update_expr(Parser* parser) {
 
     Node expr = {0};
 
+    // printf("%s\n", TokenTypeNames[parser_at(parser)->type]);
+
     if (token->type != TT_INCREMENT && token->type != TT_DECREMENT) {
         expr = parse_call_expr(parser);
         if (parser->error) return (Node) { 0 };
+
+        // TODO: Fix update expr potentially grabbing unwanted tokens
+        if (expr.type == NT_NONE) {
+            return expr;
+        }
 
         token = parser_at(parser);
 

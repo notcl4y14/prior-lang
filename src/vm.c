@@ -11,8 +11,8 @@ const OpCodeFunc OpCodeFuncs[] = {
     [OP_SYS]  = NULL,
     [OP_PSH]  = opcode_psh_func,
     [OP_POP]  = opcode_pop_func,
-    [OP_LOAD] = NULL,
-    [OP_STOR] = NULL,
+    [OP_LOAD] = opcode_load_func,
+    [OP_STOR] = opcode_stor_func,
     [OP_NG]   = NULL,
     [OP_ADD]  = opcode_add_func,
     [OP_SUB]  = opcode_sub_func,
@@ -58,6 +58,12 @@ void start_vm(VM* vm) {
     while (vm->code_pointer < vm->code.count) {
         OpCode opcode = vm->code.bytes[vm->code_pointer];
         // printf("%s\n", OpCodeNames[opcode]);
+
+        if (OpCodeFuncs[opcode] == NULL) {
+            printf("OpCode function for %s not defined\n", OpCodeNames[opcode]);
+            break;
+        }
+
         OpCodeFuncs[opcode](vm);
 
         if (vm->errcode != VM_ERR_SUCCESS) {
