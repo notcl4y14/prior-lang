@@ -119,7 +119,7 @@ ValueType process_node(Semantics* s, Node node) {
             return process_update_expr(s, node);
 
         default:
-            printf("Unhandled semantics node type: %d\n", node.type);
+            printf("Unhandled semantics node type: %s\n", NodeTypeNames[node.type]);
             assert(false);
             return VT_NONE;
     }

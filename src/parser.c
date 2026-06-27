@@ -8,6 +8,50 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char* NodeTypeNames[] = {
+    [NT_NONE] = "NONE",
+
+    [NT_PROGRAM] = "PROGRAM",
+
+    [NT_RETURN_STAT]   = "RETURN_STAT",
+    [NT_BREAK_STAT]    = "BREAK_STAT",
+    [NT_CONTINUE_STAT] = "CONTINUE_STAT",
+    [NT_VAR_STAT]      = "VAR_STAT",
+    [NT_ENUM_STAT]     = "ENUM_STAT",
+    [NT_STRUCT_STAT]   = "STRUCT_STAT",
+    [NT_FUNCTION_STAT] = "FUNCTION_STAT",
+    [NT_IF_STAT]       = "IF_STAT",
+    [NT_WHILE_STAT]    = "WHILE_STAT",
+    [NT_SWITCH_STAT]   = "SWITCH_STAT",
+
+    [NT_ARRAY_EXPR]  = "ARRAY_EXPR",
+    [NT_BIN_EXPR]    = "BIN_EXPR",
+    [NT_UNARY_EXPR]  = "UNARY_EXPR",
+    [NT_UPDATE_EXPR] = "UPDATE_EXPR",
+    [NT_TERN_EXPR]   = "TERN_EXPR",
+    [NT_ASSIGN_EXPR] = "ASSIGN_EXPR",
+    [NT_CALL_EXPR]   = "CALL_EXPR",
+    [NT_MEMBER_EXPR] = "MEMBER_EXPR",
+
+    [NT_BLOCK_EXPR]        = "BLOCK",
+    [NT_PARAMLIST]         = "PARAM_LIST",
+    [NT_PARAM]             = "PARAM",
+    [NT_ENUM_ENTRY_LIST]   = "ENUM_ENTRY_LIST",
+    [NT_ENUM_ENTRY]        = "ENUM_ENTRY",
+    [NT_ARGLIST]           = "ARG_LIST",
+    [NT_ARG]               = "ARG",
+    [NT_FIELDLIST]         = "FIELD_LIST",
+    [NT_FIELD]             = "FIELD",
+    [NT_ARRAY_TYPE]        = "ARRAY_TYPE",
+    [NT_SWITCH_ENTRY_LIST] = "SWITCH_ENTRY_LIST",
+    [NT_SWITCH_ENTRY]      = "SWITCH_ENTRY",
+
+    [NT_INTEGER_LIT] = "INTEGER_LIT",
+    [NT_FLOAT_LIT]   = "FLOAT_LIT",
+    [NT_STRING_LIT]  = "STRING_LIT",
+    [NT_IDENT_LIT]   = "IDENT_LIT",
+};
+
 Parser create_parser(TokenArray* token_array) {
     return (Parser) {
         .tokens = token_array,
@@ -36,8 +80,6 @@ const Token* parser_at_expect(Parser* parser, TokenType token_type, const char* 
     const Token* token = &parser->tokens->tokens[parser->cursor];
 
     if (token->type != token_type) {
-        // printf("%ld: %s (%s)\n", parser->cursor, errmsg, TokenTypeNames[token->type]);
-        // exit(1);
         parser_set_error(parser, errmsg, token->left_pos);
         return NULL;
     }
@@ -49,8 +91,6 @@ const Token* parser_advance_expect(Parser* parser, TokenType token_type, const c
     const Token* token = &parser->tokens->tokens[parser->cursor++];
 
     if (token->type != token_type) {
-        // printf("%ld: %s (%s)\n", parser->cursor, errmsg, TokenTypeNames[token->type]);
-        // exit(1);
         parser_set_error(parser, errmsg, token->left_pos);
         return NULL;
     }
@@ -59,9 +99,6 @@ const Token* parser_advance_expect(Parser* parser, TokenType token_type, const c
 }
 
 void parser_set_error(Parser* parser, const char* errmsg, TokenPosition errpos) {
-    // printf("%ld: %s\n", parser->cursor, errmsg);
-    // exit(1);
-    // parser->error = errmsg;
     strncpy(parser->errmsg, errmsg, PARSER_ERROR_SIZE);
     parser->errpos = errpos;
     parser->error = true;

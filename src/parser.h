@@ -54,6 +54,8 @@ typedef enum NodeType {
     NT_IDENT_LIT,
 } NodeType;
 
+extern const char* NodeTypeNames[];
+
 // TODO: Improve this
 typedef struct Node {
     NodeType type;
