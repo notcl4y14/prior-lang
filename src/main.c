@@ -1,4 +1,5 @@
 #include "interp.h"
+#include "value.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <vm.h>
@@ -296,6 +297,12 @@ void interpret(int32_t argc, char* argv[]) {
     }
 
     Interpreter interp = create_interpreter(result);
+    // Preloading
+    scope_declare_var(&interp.scope, "false");
+    scope_declare_var(&interp.scope, "true");
+    scope_define_var(&interp.scope, "false", (Value) { .type = VT_UINT8, .value.u8 = 0 });
+    scope_define_var(&interp.scope, "true", (Value) { .type = VT_UINT8, .value.u8 = 1 });
+
     run_interpreter(&interp);
 
     free_interpreter(&interp);

@@ -1,5 +1,6 @@
 #include "mem.h"
 #include "parser.h"
+#include "token.h"
 #include "value.h"
 #include <assert.h>
 #include <interp.h>
@@ -166,6 +167,132 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
 
             case VT_FLOAT32: result_value.value.f32 = left_value.value.f32 / right_value.value.f32; break;
             case VT_FLOAT64: result_value.value.f64 = left_value.value.f64 / right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_EQUALS) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  == right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  == right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 == right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 == right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 == right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 == right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 == right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 == right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 == right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 == right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_NOT_EQUALS) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  != right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  != right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 != right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 != right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 != right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 != right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 != right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 != right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 != right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 != right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_LESS) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  < right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  < right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 < right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 < right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 < right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 < right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 < right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 < right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 < right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 < right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_GREATER) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  > right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  > right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 > right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 > right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 > right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 > right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 > right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 > right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 > right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 > right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_LESS_EQUALS) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  <= right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  <= right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 <= right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 <= right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 <= right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 <= right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 <= right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 <= right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 <= right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 <= right_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_GREATER_EQUALS) {
+        result_value.type = VT_UINT8;
+
+        switch (result_value.type) {
+            case VT_INT8:    result_value.value.u8 = left_value.value.i8  >= right_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8 = left_value.value.u8  >= right_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.u8 = left_value.value.i16 >= right_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u8 = left_value.value.u16 >= right_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.u8 = left_value.value.i32 >= right_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u8 = left_value.value.u32 >= right_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.u8 = left_value.value.i64 >= right_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u8 = left_value.value.u64 >= right_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.u8 = left_value.value.f32 >= right_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.u8 = left_value.value.f64 >= right_value.value.f64; break;
 
             default: assert(false); break;
         }
