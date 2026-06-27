@@ -10,7 +10,6 @@
 const char* TokenTypeNames[] = {
     [TT_EOF] = "EOF",
 
-    [TT_OPERATOR]   = "OPERATOR",
     [TT_INTEGER]    = "INTEGER",
     [TT_FLOAT]      = "FLOAT",
     [TT_STRING]     = "STRING",

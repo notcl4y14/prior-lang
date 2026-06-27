@@ -5,13 +5,12 @@
 #include <stdint.h>
 
 typedef enum TokenType {
-    TT_EOF,
+    TT_EOF,            // EOF
 
-    TT_OPERATOR,       // TODO: unused
-    TT_INTEGER,
-    TT_FLOAT,
-    TT_STRING,
-    TT_IDENTIFIER,
+    TT_INTEGER,        // Integer
+    TT_FLOAT,          // Float
+    TT_STRING,         // String
+    TT_IDENTIFIER,     // Identifier
 
     TT_DOT,            // .
     TT_COMMA,          // ,
@@ -51,20 +50,20 @@ typedef enum TokenType {
     TT_LBRACE,         // {
     TT_RBRACE,         // }
 
-    TT_IF,
-    TT_ELSE,
-    TT_WHILE,
-    TT_SWITCH,
-    TT_CASE,
-    TT_DEFAULT,
-    TT_FN,
-    TT_ENUM,
-    TT_STRUCT,
-    TT_VAR,
-    TT_CONST,
-    TT_BREAK,
-    TT_CONTINUE,
-    TT_RETURN,
+    TT_IF,             // if
+    TT_ELSE,           // else
+    TT_WHILE,          // while
+    TT_SWITCH,         // switch
+    TT_CASE,           // case
+    TT_DEFAULT,        // default
+    TT_FN,             // fn
+    TT_ENUM,           // enum
+    TT_STRUCT,         // struct
+    TT_VAR,            // var
+    TT_CONST,          // const
+    TT_BREAK,          // break
+    TT_CONTINUE,       // continue
+    TT_RETURN,         // return
 } TokenType;
 
 extern const char* TokenTypeNames[];
