@@ -3,6 +3,20 @@
 #include <value.h>
 #include <stdbool.h>
 
+const char* ValueTypeNames[] = {
+    [VT_NONE]    = "none",
+    [VT_INT8]    = "i8",
+    [VT_INT16]   = "i16",
+    [VT_INT32]   = "i32",
+    [VT_INT64]   = "i64",
+    [VT_UINT8]   = "u8",
+    [VT_UINT16]  = "u16",
+    [VT_UINT32]  = "u32",
+    [VT_UINT64]  = "u64",
+    [VT_FLOAT32] = "f32",
+    [VT_FLOAT64] = "f64",
+};
+
 Value cast_value(Value value, ValueType cast_type) {
     long double intermed_val = 0;
 

@@ -20,10 +20,6 @@
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
-- [x] Bytecode
-  - [x] Use a variable instruction size instead of a fixed one
-- [x] VM
-  - [x] Implement error system
 
 - [ ] Bytecode
   - [ ] Make the Bytecode Structure compatible with assembly to allow Assembly Generation

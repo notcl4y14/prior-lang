@@ -177,6 +177,11 @@ Node parse_bin_comp_expr(Parser* parser) {
     Node left = parse_bin_add_expr(parser);
     if (parser->error) return (Node) { 0 };
 
+    // Unwanted tokens non-correlative to the syntax
+    if (left.type == NT_NONE) {
+        return left;
+    }
+
     while (true) {
         const Token* token = parser_at(parser);
 
@@ -213,6 +218,11 @@ Node parse_bin_add_expr(Parser* parser) {
     Node left = parse_bin_mul_expr(parser);
     if (parser->error) return (Node) { 0 };
 
+    // Unwanted tokens non-correlative to the syntax
+    if (left.type == NT_NONE) {
+        return left;
+    }
+
     while (true) {
         const Token* token = parser_at(parser);
 
@@ -245,6 +255,11 @@ Node parse_bin_add_expr(Parser* parser) {
 Node parse_bin_mul_expr(Parser* parser) {
     Node left = parse_unary_expr(parser);
     if (parser->error) return (Node) { 0 };
+
+    // Unwanted tokens non-correlative to the syntax
+    if (left.type == NT_NONE) {
+        return left;
+    }
 
     while (true) {
         const Token* token = parser_at(parser);

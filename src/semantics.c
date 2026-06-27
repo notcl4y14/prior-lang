@@ -5,13 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-const char* ValueTypeNames[] = {
-    [VT_NONE]    = "(none)",
-    [VT_INT32]   = "i32",
-    [VT_UINT32]  = "u32",
-    [VT_FLOAT32] = "f32",
-};
-
 ValueType process_node(Semantics* s, Node node);
 
 ValueType process_integer_lit(Semantics* s, Node node) {
@@ -95,6 +88,13 @@ ValueType process_update_expr(Semantics* s, Node node) {
     return data->return_type;
 }
 
+ValueType process_unary_expr(Semantics* s, Node node) {
+    NodeUnaryExprData* data = (NodeUnaryExprData*) node.pool_ptr;
+    data->return_type = process_node(s, data->expr);
+
+    return data->return_type;
+}
+
 ValueType process_node(Semantics* s, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT:
@@ -112,10 +112,14 @@ ValueType process_node(Semantics* s, Node node) {
         case NT_BIN_EXPR:
             return process_bin_expr(s, node);
 
+        case NT_UNARY_EXPR:
+            return process_unary_expr(s, node);
+
         case NT_UPDATE_EXPR:
             return process_update_expr(s, node);
 
         default:
+            printf("Unhandled semantics node type: %d\n", node.type);
             assert(false);
             return VT_NONE;
     }

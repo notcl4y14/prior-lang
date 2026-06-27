@@ -174,6 +174,38 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     return result_value;
 }
 
+Value evaluate_unary_expr(Scope* scope, Node node) {
+    NodeUnaryExprData* data = (NodeUnaryExprData*) node.pool_ptr;
+
+    Value expr_value = evaluate_node(scope, data->expr);
+
+    Value result_value = (Value) { 0 };
+    result_value.type = expr_value.type;
+
+    if (data->op == TT_MINUS) {
+        switch (expr_value.type) {
+            case VT_INT8:    result_value.value.i8  = -expr_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = -expr_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = -expr_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = -expr_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = -expr_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = -expr_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = -expr_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = -expr_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = -expr_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = -expr_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    }
+
+    return result_value;
+}
+
 Value evaluate_node(Scope* scope, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT: {
@@ -206,6 +238,9 @@ Value evaluate_node(Scope* scope, Node node) {
         case NT_BIN_EXPR:
             return evaluate_bin_expr(scope, node);
 
+        case NT_UNARY_EXPR:
+            return evaluate_unary_expr(scope, node);
+
         default:
             assert(false);
             return (Value) { 0 };
@@ -233,8 +268,7 @@ void run_interpreter(Interpreter* interp) {
     for (int32_t i = 0; i < data->count; ++i) {
         Value value = evaluate_node(&interp->scope, data->nodes[i]);
 
-        // printf("%d:%ld:%f\n", value.value.i32, value.value.i64, value.value.f32);
-        printf("%d: ", value.type);
+        printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
         switch (value.type) {
             case VT_INT8:
                 printf("%d\n", value.value.i8);
