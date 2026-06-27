@@ -1,9 +1,10 @@
-#include "mem.h"
-#include "parser.h"
-#include "token.h"
-#include "value.h"
-#include <assert.h>
 #include <interp.h>
+#include <mem.h>
+#include <parser.h>
+#include <token.h>
+#include <value.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,12 +68,45 @@ Value evaluate_var_stat(Scope* scope, Node node) {
 
     if (data->value.type != NT_NONE) {
         Value value = evaluate_node(scope, data->value);
+        // printf("%s\n", ValueTypeNames[value.type]);
         value = cast_value(value, data->return_type);
         scope_define_var(scope, name, value);
     }
 
     return (Value) { 0 };
 }
+
+Value evaluate_if_stat(Scope* scope, Node node) {
+    NodeIfStatData* data = (NodeIfStatData*) node.pool_ptr;
+
+    Value condition = evaluate_node(scope, data->expr);
+
+    if (condition.value.u8 == 1) {
+        return evaluate_node(scope, data->block);
+    } else {
+        if (data->ifelse.type != NT_NONE) {
+            return evaluate_node(scope, data->ifelse);
+        }
+    }
+
+    return (Value) { 0 };
+}
+
+
+
+Value evaluate_block(Scope* scope, Node node) {
+    NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
+
+    Value last_value = (Value) { 0 };
+
+    for (int32_t i = 0; i < data->count; ++i) {
+        last_value = evaluate_node(scope, data->nodes[i]);
+    }
+
+    return last_value;
+}
+
+
 
 Value evaluate_bin_expr(Scope* scope, Node node) {
     NodeBinExprData* data = (NodeBinExprData*) node.pool_ptr;
@@ -173,7 +207,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_EQUALS) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  == right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  == right_value.value.u8;  break;
 
@@ -194,7 +228,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_NOT_EQUALS) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  != right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  != right_value.value.u8;  break;
 
@@ -215,7 +249,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_LESS) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  < right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  < right_value.value.u8;  break;
 
@@ -236,7 +270,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_GREATER) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  > right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  > right_value.value.u8;  break;
 
@@ -257,7 +291,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_LESS_EQUALS) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  <= right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  <= right_value.value.u8;  break;
 
@@ -278,7 +312,7 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
     } else if (data->op == TT_GREATER_EQUALS) {
         result_value.type = VT_UINT8;
 
-        switch (result_value.type) {
+        switch (left_value.type) {
             case VT_INT8:    result_value.value.u8 = left_value.value.i8  >= right_value.value.i8;  break;
             case VT_UINT8:   result_value.value.u8 = left_value.value.u8  >= right_value.value.u8;  break;
 
@@ -359,8 +393,17 @@ Value evaluate_node(Scope* scope, Node node) {
             return value;
         } break;
 
+
         case NT_VAR_STAT:
             return evaluate_var_stat(scope, node);
+
+        case NT_IF_STAT:
+            return evaluate_if_stat(scope, node);
+
+
+        case NT_BLOCK_EXPR:
+            return evaluate_block(scope, node);
+
 
         case NT_BIN_EXPR:
             return evaluate_bin_expr(scope, node);

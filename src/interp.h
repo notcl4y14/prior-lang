@@ -1,8 +1,8 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "value.h"
 #include <parser.h>
+#include <value.h>
 
 typedef struct Scope {
     char* variables_k[256];

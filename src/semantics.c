@@ -16,7 +16,7 @@ ValueType process_float_lit(Semantics* s, Node node) {
 }
 
 ValueType process_ident_lit(Semantics* s, Node node) {
-    return VT_INT32;
+    return VT_NONE;
 }
 
 ValueType process_var_stat(Semantics* s, Node node) {
@@ -55,6 +55,31 @@ ValueType process_var_stat(Semantics* s, Node node) {
     return variable_type;
 }
 
+ValueType process_if_stat(Semantics* s, Node node) {
+    NodeIfStatData* data = (NodeIfStatData*) node.pool_ptr;
+
+    process_node(s, data->expr);
+    process_node(s, data->block);
+
+    if (data->ifelse.type != NT_NONE) {
+        process_node(s, data->ifelse);
+    }
+
+    return VT_NONE;
+}
+
+ValueType process_block(Semantics* s, Node node) {
+    NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
+
+    ValueType last_type = VT_NONE;
+
+    for (int32_t i = 0; i < data->count; ++i) {
+        last_type = process_node(s, data->nodes[i]);
+    }
+
+    return last_type;
+}
+
 ValueType process_bin_expr(Semantics* s, Node node) {
     NodeBinExprData* data = (NodeBinExprData*) node.pool_ptr;
 
@@ -63,18 +88,21 @@ ValueType process_bin_expr(Semantics* s, Node node) {
     // int + float = int
     // float + int = float
 
+    // TODO: Implement auto-casting
+
     Node left = data->left;
     ValueType left_type = process_node(s, left);
 
     Node right = data->right;
-    ValueType right_type = process_node(s, right);
+    process_node(s, right);
+    // ValueType right_type = process_node(s, right);
 
-    if (left_type != right_type) {
-        sprintf(s->errmsg, "Cannot do an arithmetical expression with %s and %s", ValueTypeNames[left_type], ValueTypeNames[right_type]);
-        s->error = true;
+    // if (left_type != right_type) {
+    //     sprintf(s->errmsg, "Cannot do an arithmetical expression with %s and %s", ValueTypeNames[left_type], ValueTypeNames[right_type]);
+    //     s->error = true;
 
-        return VT_NONE;
-    }
+    //     return VT_NONE;
+    // }
 
     data->return_type = left_type;
 
@@ -108,6 +136,12 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_VAR_STAT:
             return process_var_stat(s, node);
+
+        case NT_IF_STAT:
+            return process_if_stat(s, node);
+
+        case NT_BLOCK_EXPR:
+            return process_block(s, node);
 
         case NT_BIN_EXPR:
             return process_bin_expr(s, node);

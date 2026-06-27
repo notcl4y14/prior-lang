@@ -1,6 +1,7 @@
+#include <value.h>
+
 #include <assert.h>
 #include <stdint.h>
-#include <value.h>
 #include <stdbool.h>
 
 const char* ValueTypeNames[] = {
