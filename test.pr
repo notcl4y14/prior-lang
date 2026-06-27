@@ -6,4 +6,5 @@ if (PI > PI + 0.1) {
     120;
 } else {
     PI;
+    return 101010;
 }

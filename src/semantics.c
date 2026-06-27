@@ -19,6 +19,14 @@ ValueType process_ident_lit(Semantics* s, Node node) {
     return VT_NONE;
 }
 
+ValueType process_return_stat(Semantics* s, Node node) {
+    NodeReturnStatData* data = (NodeReturnStatData*) node.pool_ptr;
+
+    data->return_type = process_node(s, data->value);
+
+    return data->return_type;
+}
+
 ValueType process_var_stat(Semantics* s, Node node) {
     NodeVarStatData* data = (NodeVarStatData*) node.pool_ptr;
 
@@ -133,6 +141,9 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_IDENT_LIT:
             return process_ident_lit(s, node);
+
+        case NT_RETURN_STAT:
+            return process_return_stat(s, node);
 
         case NT_VAR_STAT:
             return process_var_stat(s, node);

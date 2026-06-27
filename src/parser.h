@@ -69,6 +69,8 @@ typedef struct Node {
  */
 typedef struct NodeReturnStatData {
     Node value;
+
+    ValueType return_type;
 } NodeReturnStatData;
 
 typedef struct NodeVarStatData {

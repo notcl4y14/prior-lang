@@ -59,6 +59,12 @@ Value scope_get_var(Scope* scope, char* name) {
 
 Value evaluate_node(Scope* scope, Node node);
 
+Value evaluate_return_stat(Scope* scope, Node node) {
+    NodeReturnStatData* data = (NodeReturnStatData*) node.pool_ptr;
+
+    return evaluate_node(scope, data->value);
+}
+
 Value evaluate_var_stat(Scope* scope, Node node) {
     NodeVarStatData* data = (NodeVarStatData*) node.pool_ptr;
 
@@ -393,6 +399,9 @@ Value evaluate_node(Scope* scope, Node node) {
             return value;
         } break;
 
+
+        case NT_RETURN_STAT:
+            return evaluate_return_stat(scope, node);
 
         case NT_VAR_STAT:
             return evaluate_var_stat(scope, node);
