@@ -1,3 +1,4 @@
+#include "error.h"
 #include <assert.h>
 #include <mem.h>
 #include <stdbool.h>
@@ -507,6 +508,10 @@ void free_lexer(Lexer* lexer) {
     }
 }
 
+void add_lexer_error(Lexer* lexer, const char* errmsg) {
+    add_to_error_list(&lexer->error_list, create_error(errmsg, lexer->position));
+}
+
 void load_lexer_code(Lexer* lexer, const char* code, size_t size) {
     lexer->code = alloc_copy(size, code);
     assert(lexer->code != NULL && "Failed to allocate lexer code");
@@ -541,6 +546,10 @@ TokenArray lexer_tokenize(Lexer* lexer) {
         } else if (is_char_symbol(current_char)) {
             push_token_array(&token_array, lexer_tokenize_symbol(lexer));
         } else {
+            char errmsg[ERROR_MESSAGE_SIZE] = { 0 };
+            snprintf(errmsg, ERROR_MESSAGE_SIZE, "Unknown character '%c'", current_char);
+            add_lexer_error(lexer, errmsg);
+
             lexer_step(lexer);
         }
     }

@@ -2,8 +2,8 @@
 
 - [x] Tokens
   - [x] Add Positions to Tokens
-- [ ] Lexer
-  - [ ] Implement errors
+- [x] Lexer
+  - [x] Implement errors
 - [ ] AST
   - [ ] Combine Update Expression with Unary Expression if needed
   - [x] Implement `else if` and `else`

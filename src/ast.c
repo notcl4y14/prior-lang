@@ -522,7 +522,7 @@ Node parse_fields(Parser* parser) {
     };
 
     Node field_list_node = (Node) {
-        .type = NT_FIELDLIST,
+        .type = NT_FIELD_LIST,
         .pool_ptr = allocate_and_write_node_pool(&parser->node_pool, &field_list_data, sizeof(NodeFieldListData)),
     };
 
@@ -598,7 +598,7 @@ Node parse_parameters(Parser* parser) {
     };
 
     Node param_list_node = (Node) {
-        .type = NT_PARAMLIST,
+        .type = NT_PARAM_LIST,
         .pool_ptr = allocate_and_write_node_pool(&parser->node_pool, &param_list_data, sizeof(NodeParamListData)),
     };
 
@@ -759,7 +759,7 @@ Node parse_args(Parser* parser) {
     };
 
     Node param_list_node = (Node) {
-        .type = NT_PARAMLIST,
+        .type = NT_PARAM_LIST,
         .pool_ptr = allocate_and_write_node_pool(&parser->node_pool, &arg_list_data, sizeof(NodeArgListData)),
     };
 

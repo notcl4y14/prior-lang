@@ -94,6 +94,20 @@ void compile(int32_t argc, char* argv[]) {
 
     TokenArray token_array = lexer_tokenize(&lexer);
 
+    if (lexer.error_list.count > 0) {
+        for (int32_t i = 0; i < lexer.error_list.count; ++i) {
+            const Error* error = &lexer.error_list.errors[i];
+            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
+        }
+
+        free_token_array(&token_array);
+        free_lexer(&lexer);
+
+        free(lexer_code);
+        lexer_code = NULL;
+        return;
+    }
+
 
     if (show_tokens) {
         printf("\n==== TOKENS ====\n");
@@ -232,6 +246,20 @@ void interpret(int32_t argc, char* argv[]) {
     load_lexer_code(&lexer, lexer_code, file_size);
 
     TokenArray token_array = lexer_tokenize(&lexer);
+
+    if (lexer.error_list.count > 0) {
+        for (int32_t i = 0; i < lexer.error_list.count; ++i) {
+            const Error* error = &lexer.error_list.errors[i];
+            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
+        }
+
+        free_token_array(&token_array);
+        free_lexer(&lexer);
+
+        free(lexer_code);
+        lexer_code = NULL;
+        return;
+    }
 
 
 
