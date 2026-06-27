@@ -6,6 +6,8 @@
 
 void init_node_pool(NodePool* npool, size_t size) {
     npool->data = calloc(size, 1);
+    assert(npool->data != NULL && "Failed to allocate node pool");
+
     npool->count = 0;
     npool->capacity = size;
 }
