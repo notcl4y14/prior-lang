@@ -126,6 +126,8 @@ typedef struct NodeAssignExprData {
     TokenType op;
     Node ident;
     Node value;
+
+    ValueType return_type;
 } NodeAssignExprData;
 
 typedef struct NodeBinExprData {

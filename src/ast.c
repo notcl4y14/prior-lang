@@ -393,6 +393,11 @@ Node parse_call_expr(Parser* parser) {
     Node member = parse_member_expr(parser);
     if (parser->error) return (Node) { 0 };
 
+    // Unwanted tokens non-correlative to the syntax
+    if (member.type == NT_NONE) {
+        return member;
+    }
+
     while (true) {
         TokenType token_type = parser_at(parser)->type;
         if (token_type != TT_LPAREN) {
@@ -422,6 +427,11 @@ Node parse_call_expr(Parser* parser) {
 Node parse_member_expr(Parser* parser) {
     Node object = parse_literal_term(parser);
     if (parser->error) return (Node) { 0 };
+
+    // Unwanted tokens non-correlative to the syntax
+    if (object.type == NT_NONE) {
+        return object;
+    }
 
     while (true) {
         TokenType token_type = parser_at(parser)->type;

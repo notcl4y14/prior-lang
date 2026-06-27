@@ -76,6 +76,15 @@ ValueType process_if_stat(Semantics* s, Node node) {
     return VT_NONE;
 }
 
+ValueType process_while_stat(Semantics* s, Node node) {
+    NodeWhileData* data = (NodeWhileData*) node.pool_ptr;
+
+    process_node(s, data->expr);
+    process_node(s, data->block);
+
+    return VT_NONE;
+}
+
 ValueType process_block(Semantics* s, Node node) {
     NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
 
@@ -124,6 +133,13 @@ ValueType process_update_expr(Semantics* s, Node node) {
     return data->return_type;
 }
 
+ValueType process_assign_expr(Semantics* s, Node node) {
+    NodeAssignExprData* data = (NodeAssignExprData*) node.pool_ptr;
+    data->return_type = process_node(s, data->value);
+
+    return data->return_type;
+}
+
 ValueType process_unary_expr(Semantics* s, Node node) {
     NodeUnaryExprData* data = (NodeUnaryExprData*) node.pool_ptr;
     data->return_type = process_node(s, data->expr);
@@ -151,6 +167,9 @@ ValueType process_node(Semantics* s, Node node) {
         case NT_IF_STAT:
             return process_if_stat(s, node);
 
+        case NT_WHILE_STAT:
+            return process_while_stat(s, node);
+
         case NT_BLOCK_EXPR:
             return process_block(s, node);
 
@@ -162,6 +181,9 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_UPDATE_EXPR:
             return process_update_expr(s, node);
+
+        case NT_ASSIGN_EXPR:
+            return process_assign_expr(s, node);
 
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node.type]);

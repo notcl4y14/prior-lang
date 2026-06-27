@@ -98,6 +98,21 @@ Value evaluate_if_stat(Scope* scope, Node node) {
     return (Value) { 0 };
 }
 
+Value evaluate_while_stat(Scope* scope, Node node) {
+    NodeWhileData* data = (NodeWhileData*) node.pool_ptr;
+
+    Value last_value = (Value) { 0 };
+    Value condition = evaluate_node(scope, data->expr);
+
+    // TODO: Implement return, break and continue for while loop
+    while (condition.value.u8 == 1) {
+        last_value = evaluate_node(scope, data->block);
+        condition = evaluate_node(scope, data->expr);
+    }
+
+    return last_value;
+}
+
 
 
 Value evaluate_block(Scope* scope, Node node) {
@@ -373,6 +388,128 @@ Value evaluate_unary_expr(Scope* scope, Node node) {
     return result_value;
 }
 
+Value evaluate_assign_expr(Scope* scope, Node node) {
+    NodeAssignExprData* data = (NodeAssignExprData*) node.pool_ptr;
+
+    Value var_value = evaluate_node(scope, data->ident);
+    Value assign_value = evaluate_node(scope, data->value);
+
+    /*  Auto-casting */
+    if (var_value.type != assign_value.type) {
+        assign_value = cast_value(assign_value, var_value.type);
+    }
+
+    Value result_value = (Value) { 0 };
+    result_value.type = var_value.type;
+
+    if (data->op == TT_EQUAL) {
+        switch (var_value.type) {
+            case VT_INT8:    result_value.value.i8  = assign_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = assign_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = assign_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = assign_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = assign_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = assign_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = assign_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = assign_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = assign_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = assign_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_PLUS_EQUAL) {
+        switch (var_value.type) {
+            case VT_INT8:    result_value.value.i8  = var_value.value.i8  + assign_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = var_value.value.u8  + assign_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = var_value.value.i16 + assign_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = var_value.value.u16 + assign_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = var_value.value.i32 + assign_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = var_value.value.u32 + assign_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = var_value.value.i64 + assign_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = var_value.value.u64 + assign_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = var_value.value.f32 + assign_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = var_value.value.f64 + assign_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_MINUS_EQUAL) {
+        switch (var_value.type) {
+            case VT_INT8:    result_value.value.i8  = var_value.value.i8  - assign_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = var_value.value.u8  - assign_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = var_value.value.i16 - assign_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = var_value.value.u16 - assign_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = var_value.value.i32 - assign_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = var_value.value.u32 - assign_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = var_value.value.i64 - assign_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = var_value.value.u64 - assign_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = var_value.value.f32 - assign_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = var_value.value.f64 - assign_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_TIMES_EQUAL) {
+        switch (var_value.type) {
+            case VT_INT8:    result_value.value.i8  = var_value.value.i8  * assign_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = var_value.value.u8  * assign_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = var_value.value.i16 * assign_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = var_value.value.u16 * assign_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = var_value.value.i32 * assign_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = var_value.value.u32 * assign_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = var_value.value.i64 * assign_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = var_value.value.u64 * assign_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = var_value.value.f32 * assign_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = var_value.value.f64 * assign_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    } else if (data->op == TT_DIVIDE_EQUAL) {
+        if (assign_value.value.u64 == 0) {
+            printf("Cannot divide by 0\n");
+            exit(1);
+            return (Value) { 0 };
+        }
+
+        switch (var_value.type) {
+            case VT_INT8:    result_value.value.i8  = var_value.value.i8  / assign_value.value.i8;  break;
+            case VT_UINT8:   result_value.value.u8  = var_value.value.u8  / assign_value.value.u8;  break;
+
+            case VT_INT16:   result_value.value.i16 = var_value.value.i16 / assign_value.value.i16; break;
+            case VT_UINT16:  result_value.value.u16 = var_value.value.u16 / assign_value.value.u16; break;
+
+            case VT_INT32:   result_value.value.i32 = var_value.value.i32 / assign_value.value.i32; break;
+            case VT_UINT32:  result_value.value.u32 = var_value.value.u32 / assign_value.value.u32; break;
+
+            case VT_INT64:   result_value.value.i64 = var_value.value.i64 / assign_value.value.i64; break;
+            case VT_UINT64:  result_value.value.u64 = var_value.value.u64 / assign_value.value.u64; break;
+
+            case VT_FLOAT32: result_value.value.f32 = var_value.value.f32 / assign_value.value.f32; break;
+            case VT_FLOAT64: result_value.value.f64 = var_value.value.f64 / assign_value.value.f64; break;
+
+            default: assert(false); break;
+        }
+    }
+
+    scope_define_var(scope, ((NodeLiteralData*)(data->ident.pool_ptr))->value, result_value);
+
+    return result_value;
+}
+
 Value evaluate_node(Scope* scope, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT: {
@@ -409,6 +546,9 @@ Value evaluate_node(Scope* scope, Node node) {
         case NT_IF_STAT:
             return evaluate_if_stat(scope, node);
 
+        case NT_WHILE_STAT:
+            return evaluate_while_stat(scope, node);
+
 
         case NT_BLOCK_EXPR:
             return evaluate_block(scope, node);
@@ -420,7 +560,11 @@ Value evaluate_node(Scope* scope, Node node) {
         case NT_UNARY_EXPR:
             return evaluate_unary_expr(scope, node);
 
+        case NT_ASSIGN_EXPR:
+            return evaluate_assign_expr(scope, node);
+
         default:
+            printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node.type]);
             assert(false);
             return (Value) { 0 };
     }

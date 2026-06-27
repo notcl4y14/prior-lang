@@ -1,10 +1,14 @@
-const PI: f64 = 3.14159;
+var PI: f64 = 3.14159;
 
-if (PI > PI + 0.1) {
-    69;
-} else if (PI == 0) {
-    120;
-} else {
-    PI;
-    return 101010;
+PI = 512;
+PI += 1;
+PI -= 2;
+PI *= 2;
+PI /= 4;
+
+var i: i32 = 0;
+
+while (i <= 10) {
+    i += 1;
+    (i-1) * 2;
 }
