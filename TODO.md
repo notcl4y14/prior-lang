@@ -2,6 +2,8 @@
 
 - [x] Tokens
   - [x] Add Positions to Tokens
+- [ ] Lexer
+  - [ ] Implement errors
 - [ ] AST
   - [ ] Combine Update Expression with Unary Expression if needed
   - [x] Implement `else if` and `else`
@@ -14,6 +16,7 @@
   - [x] Implement enum
   - [ ] Switch from memory arena to allocation tree to allow AST optimizations
   - [ ] Implement casts
+  - [ ] Implement positions for nodes
 - [ ] Semantics Check
   - [x] Implement error system
   - [ ] Implement auto-cast
