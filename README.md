@@ -30,3 +30,5 @@ cmake --build . -t build_tests
 # Run test
 cmake --build . -t test
 ```
+
+Use `assert` from `assert.h` to write tests. CTest output from CMake is vague and `stderr` and `stdout` are intercepted, so run the individual test executables in `build` (for example `build/test_lexer`) to find out which part of the test (or which assert) triggered the failure.
