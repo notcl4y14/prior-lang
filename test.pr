@@ -1,7 +1,7 @@
-fn func(): i32 {
-    return 69;
+fn add(x: i32, y: i32): i32 {
+    return x + y;
 }
 
 fn main(): i32 {
-    return func();
+    return add(10, 20);
 }

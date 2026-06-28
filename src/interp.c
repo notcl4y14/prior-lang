@@ -129,11 +129,24 @@ EvalResult evaluate_fn_stat(Scope* scope, Node node) {
     scope_declare_var(scope, name);
 
     ValueFunction fn_value = (ValueFunction) {
-        .params_names = { 0 },
-        .params_types = { 0 },
+        .params = { {} },
         .node = data->block,
         .return_type = get_value_type_from_string(type),
     };
+
+    NodeParamListData* param_list_data = (NodeParamListData*) data->params.pool_ptr;
+
+    for (int32_t i = 0; i < param_list_data->count; ++i) {
+        NodeParamData* param_data = (NodeParamData*) param_list_data->nodes[i].pool_ptr;
+
+        char* param_name = ((NodeLiteralData*)(param_data->name.pool_ptr))->value;
+        ValueType param_type = get_value_type_from_string(((NodeLiteralData*)(param_data->type.pool_ptr))->value);
+
+        fn_value.params[i] = (ValueFunctionParam) {
+            .name = param_name,
+            .type = param_type,
+        };
+    }
 
     // TODO: Free
     ValueFunction* fn_ptr = malloc(sizeof(ValueFunction));
@@ -617,8 +630,40 @@ EvalResult evaluate_call_expr(Scope* scope, Node node) {
     Value fn_ptr = evaluate_node(scope, data->member).value;
     ValueFunction* fn_value = (ValueFunction*) fn_ptr.value.u64;
 
-    // TODO: Replace with call function and allow args
-    EvalResult result = evaluate_node(scope, fn_value->node);
+    EvalResult result = (EvalResult) { 0 };
+
+    {
+        NodeArgListData* arg_list_data = (NodeArgListData*) data->args.pool_ptr;
+        NodeBlockData* fn_block_data = (NodeBlockData*) fn_value->node.pool_ptr;
+
+        ValueFunctionParam* param_list = (ValueFunctionParam*) fn_value->params;
+
+        Scope sub_scope = create_scope(scope);
+
+        // Defining parameter values with arguments
+        for (int32_t i = 0; i < arg_list_data->count; ++i) {
+            NodeArgData* arg_data = (NodeArgData*) arg_list_data->nodes[i].pool_ptr;
+            Value arg_value = evaluate_node(&sub_scope, arg_data->expr).value;
+            ValueFunctionParam param = param_list[i];
+
+            scope_declare_var(&sub_scope, param.name);
+            scope_define_var(&sub_scope, param.name, arg_value);
+        }
+
+        EvalResult last_result = (EvalResult) { 0 };
+
+        for (int32_t i = 0; i < fn_block_data->count; ++i) {
+            last_result = evaluate_node(&sub_scope, fn_block_data->nodes[i]);
+
+            if (last_result.break_type == EBT_RETURN) {
+                break;
+            }
+        }
+
+        free_scope(&sub_scope);
+
+        result = last_result;
+    }
 
     return result;
 }

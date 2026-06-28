@@ -4,9 +4,13 @@
 #include <parser.h>
 #include <value.h>
 
+typedef struct ValueFunctionParam {
+    char*     name;
+    ValueType type;
+} ValueFunctionParam;
+
 typedef struct ValueFunction {
-    char params_names[128];
-    ValueType params_types[128];
+    ValueFunctionParam params[256];
     ValueType return_type;
     Node node;
 } ValueFunction;
