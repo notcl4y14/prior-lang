@@ -15,6 +15,18 @@ void scope_declare_var(Scope* scope, char* name);
 void scope_define_var(Scope* scope, char* name, Value value);
 Value scope_get_var(Scope* scope, char* name);
 
+typedef enum EvalBreakType {
+    EBT_NONE,
+    EBT_RETURN,
+    EBT_BREAK,
+    EBT_CONTINUE,
+} EvalBreakType;
+
+typedef struct EvalResult {
+    Value         value;
+    EvalBreakType break_type;
+} EvalResult;
+
 typedef struct Interpreter {
     Node  ast;
     Scope scope;

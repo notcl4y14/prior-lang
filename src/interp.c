@@ -57,15 +57,38 @@ Value scope_get_var(Scope* scope, char* name) {
 
 
 
-Value evaluate_node(Scope* scope, Node node);
+EvalResult evaluate_node(Scope* scope, Node node);
 
-Value evaluate_return_stat(Scope* scope, Node node) {
+EvalResult evaluate_return_stat(Scope* scope, Node node) {
     NodeReturnStatData* data = (NodeReturnStatData*) node.pool_ptr;
 
-    return evaluate_node(scope, data->value);
+    Value value = (Value) { 0 };
+
+    if (data->value.type != NT_NONE) {
+        value = evaluate_node(scope, data->value).value;
+    }
+
+    return (EvalResult) {
+        .value = value,
+        .break_type = EBT_RETURN,
+    };
 }
 
-Value evaluate_var_stat(Scope* scope, Node node) {
+EvalResult evaluate_break_stat(Scope* scope, Node node) {
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_BREAK,
+    };
+}
+
+EvalResult evaluate_continue_stat(Scope* scope, Node node) {
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_CONTINUE,
+    };
+}
+
+EvalResult evaluate_var_stat(Scope* scope, Node node) {
     NodeVarStatData* data = (NodeVarStatData*) node.pool_ptr;
 
     char* name = ((NodeLiteralData*)(data->ident.pool_ptr))->value;
@@ -73,19 +96,22 @@ Value evaluate_var_stat(Scope* scope, Node node) {
     scope_declare_var(scope, name);
 
     if (data->value.type != NT_NONE) {
-        Value value = evaluate_node(scope, data->value);
-        // printf("%s\n", ValueTypeNames[value.type]);
+        Value value = evaluate_node(scope, data->value).value;
         value = cast_value(value, data->return_type);
+
         scope_define_var(scope, name, value);
     }
 
-    return (Value) { 0 };
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_NONE,
+    };
 }
 
-Value evaluate_if_stat(Scope* scope, Node node) {
+EvalResult evaluate_if_stat(Scope* scope, Node node) {
     NodeIfStatData* data = (NodeIfStatData*) node.pool_ptr;
 
-    Value condition = evaluate_node(scope, data->expr);
+    Value condition = evaluate_node(scope, data->expr).value;
 
     if (condition.value.u8 == 1) {
         return evaluate_node(scope, data->block);
@@ -95,45 +121,63 @@ Value evaluate_if_stat(Scope* scope, Node node) {
         }
     }
 
-    return (Value) { 0 };
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_NONE,
+    };
 }
 
-Value evaluate_while_stat(Scope* scope, Node node) {
+EvalResult evaluate_while_stat(Scope* scope, Node node) {
     NodeWhileData* data = (NodeWhileData*) node.pool_ptr;
 
-    Value last_value = (Value) { 0 };
-    Value condition = evaluate_node(scope, data->expr);
+    EvalResult last_result = (EvalResult) { 0 };
+    Value condition = evaluate_node(scope, data->expr).value;
 
-    // TODO: Implement return, break and continue for while loop
     while (condition.value.u8 == 1) {
-        last_value = evaluate_node(scope, data->block);
-        condition = evaluate_node(scope, data->expr);
+        EvalResult next_result = evaluate_node(scope, data->block);
+
+        if (next_result.break_type == EBT_RETURN) {
+            last_result = next_result;
+            break;
+        } else if (next_result.break_type == EBT_BREAK) {
+            break;
+        } else if (next_result.break_type == EBT_CONTINUE) {
+            condition = evaluate_node(scope, data->expr).value;
+            continue;
+        }
+
+        last_result = next_result;
+        condition = evaluate_node(scope, data->expr).value;
     }
 
-    return last_value;
+    return last_result;
 }
 
 
 
-Value evaluate_block(Scope* scope, Node node) {
+EvalResult evaluate_block(Scope* scope, Node node) {
     NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
 
-    Value last_value = (Value) { 0 };
+    EvalResult last_result = (EvalResult) { 0 };
 
     for (int32_t i = 0; i < data->count; ++i) {
-        last_value = evaluate_node(scope, data->nodes[i]);
+        last_result = evaluate_node(scope, data->nodes[i]);
+
+        if (last_result.break_type == EBT_RETURN) {
+            break;
+        }
     }
 
-    return last_value;
+    return last_result;
 }
 
 
 
-Value evaluate_bin_expr(Scope* scope, Node node) {
+EvalResult evaluate_bin_expr(Scope* scope, Node node) {
     NodeBinExprData* data = (NodeBinExprData*) node.pool_ptr;
 
-    Value left_value = evaluate_node(scope, data->left);
-    Value right_value = evaluate_node(scope, data->right);
+    Value left_value = evaluate_node(scope, data->left).value;
+    Value right_value = evaluate_node(scope, data->right).value;
 
     /*  Auto-casting */
     if (left_value.type != right_value.type) {
@@ -204,7 +248,6 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
         if (right_value.value.u64 == 0) {
             printf("Cannot divide by 0\n");
             exit(1);
-            return (Value) { 0 };
         }
 
         switch (result_value.type) {
@@ -353,13 +396,16 @@ Value evaluate_bin_expr(Scope* scope, Node node) {
         }
     }
 
-    return result_value;
+    return (EvalResult) {
+        .value = result_value,
+        .break_type = EBT_NONE,
+    };
 }
 
-Value evaluate_unary_expr(Scope* scope, Node node) {
+EvalResult evaluate_unary_expr(Scope* scope, Node node) {
     NodeUnaryExprData* data = (NodeUnaryExprData*) node.pool_ptr;
 
-    Value expr_value = evaluate_node(scope, data->expr);
+    Value expr_value = evaluate_node(scope, data->expr).value;
 
     Value result_value = (Value) { 0 };
     result_value.type = expr_value.type;
@@ -385,14 +431,17 @@ Value evaluate_unary_expr(Scope* scope, Node node) {
         }
     }
 
-    return result_value;
+    return (EvalResult) {
+        .value = result_value,
+        .break_type = EBT_NONE,
+    };
 }
 
-Value evaluate_assign_expr(Scope* scope, Node node) {
+EvalResult evaluate_assign_expr(Scope* scope, Node node) {
     NodeAssignExprData* data = (NodeAssignExprData*) node.pool_ptr;
 
-    Value var_value = evaluate_node(scope, data->ident);
-    Value assign_value = evaluate_node(scope, data->value);
+    Value var_value = evaluate_node(scope, data->ident).value;
+    Value assign_value = evaluate_node(scope, data->value).value;
 
     /*  Auto-casting */
     if (var_value.type != assign_value.type) {
@@ -482,7 +531,6 @@ Value evaluate_assign_expr(Scope* scope, Node node) {
         if (assign_value.value.u64 == 0) {
             printf("Cannot divide by 0\n");
             exit(1);
-            return (Value) { 0 };
         }
 
         switch (var_value.type) {
@@ -507,10 +555,13 @@ Value evaluate_assign_expr(Scope* scope, Node node) {
 
     scope_define_var(scope, ((NodeLiteralData*)(data->ident.pool_ptr))->value, result_value);
 
-    return result_value;
+    return (EvalResult) {
+        .value = result_value,
+        .break_type = EBT_NONE,
+    };
 }
 
-Value evaluate_node(Scope* scope, Node node) {
+EvalResult evaluate_node(Scope* scope, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT: {
             NodeLiteralData* data = (NodeLiteralData*) node.pool_ptr;
@@ -518,7 +569,7 @@ Value evaluate_node(Scope* scope, Node node) {
             value.type = VT_INT32;
             value.value.i32 = atoi(data->value);
 
-            return value;
+            return (EvalResult) { .value = value, .break_type = EBT_NONE };
         } break;
 
         case NT_FLOAT_LIT: {
@@ -527,18 +578,24 @@ Value evaluate_node(Scope* scope, Node node) {
             value.type = VT_FLOAT32;
             value.value.f32 = atof(data->value);
 
-            return value;
+            return (EvalResult) { .value = value, .break_type = EBT_NONE };
         } break;
 
         case NT_IDENT_LIT: {
             NodeLiteralData* data = (NodeLiteralData*) node.pool_ptr;
             Value value = scope_get_var(scope, data->value);
-            return value;
+            return (EvalResult) { .value = value, .break_type = EBT_NONE };
         } break;
 
 
         case NT_RETURN_STAT:
             return evaluate_return_stat(scope, node);
+
+        case NT_BREAK_STAT:
+            return evaluate_break_stat(scope, node);
+
+        case NT_CONTINUE_STAT:
+            return evaluate_continue_stat(scope, node);
 
         case NT_VAR_STAT:
             return evaluate_var_stat(scope, node);
@@ -566,7 +623,7 @@ Value evaluate_node(Scope* scope, Node node) {
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node.type]);
             assert(false);
-            return (Value) { 0 };
+            return (EvalResult) { 0 };
     }
 }
 
@@ -589,7 +646,13 @@ void run_interpreter(Interpreter* interp) {
     NodeBlockData* data = (NodeBlockData*) interp->ast.pool_ptr;
 
     for (int32_t i = 0; i < data->count; ++i) {
-        Value value = evaluate_node(&interp->scope, data->nodes[i]);
+        EvalResult result = evaluate_node(&interp->scope, data->nodes[i]);
+        Value value = result.value;
+
+        // TODO: Temporary
+        if (result.break_type == EBT_RETURN) {
+            break;
+        }
 
         printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
         switch (value.type) {

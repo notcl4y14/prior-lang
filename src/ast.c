@@ -1073,6 +1073,10 @@ Node parse_return_stat(Parser* parser) {
     Node value = parse_expr(parser);
     if (parser->error) return (Node) { 0 };
 
+    if (value.type == NT_NONE) {
+        // Do nothing
+    }
+
     NodeReturnStatData return_data = (NodeReturnStatData) {
         .value = value,
     };
