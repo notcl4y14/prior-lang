@@ -35,6 +35,7 @@ typedef struct Value {
     } value;
 } Value;
 
+ValueType get_value_type_from_string(const char* string);
 Value cast_value(Value value, ValueType cast_type);
 
 #endif

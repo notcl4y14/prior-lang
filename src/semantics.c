@@ -75,6 +75,15 @@ ValueType process_var_stat(Semantics* s, Node node) {
     return variable_type;
 }
 
+ValueType process_fn_stat(Semantics* s, Node node) {
+    // NodeFunctionData* data = (NodeFunctionData*) node.pool_ptr;
+
+    // char* type_name = ((NodeLiteralData*)(data->type.pool_ptr))->value;
+
+    return VT_NONE;
+}
+
+
 ValueType process_if_stat(Semantics* s, Node node) {
     NodeIfStatData* data = (NodeIfStatData*) node.pool_ptr;
 
@@ -181,6 +190,9 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_VAR_STAT:
             return process_var_stat(s, node);
+
+        case NT_FUNCTION_STAT:
+            return process_fn_stat(s, node);
 
         case NT_IF_STAT:
             return process_if_stat(s, node);

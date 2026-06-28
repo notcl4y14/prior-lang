@@ -1,3 +1,4 @@
+#include <string.h>
 #include <value.h>
 
 #include <assert.h>
@@ -17,6 +18,34 @@ const char* ValueTypeNames[] = {
     [VT_FLOAT32] = "f32",
     [VT_FLOAT64] = "f64",
 };
+
+ValueType get_value_type_from_string(const char* string) {
+    ValueType type = VT_NONE;
+
+    if (strcmp(string, "i8") == 0) {
+        type = VT_INT8;
+    } else if (strcmp(string, "i16") == 0) {
+        type = VT_INT16;
+    } else if (strcmp(string, "i32") == 0) {
+        type = VT_INT32;
+    } else if (strcmp(string, "i64") == 0) {
+        type = VT_INT64;
+    } else if (strcmp(string, "u8") == 0) {
+        type = VT_UINT8;
+    } else if (strcmp(string, "u16") == 0) {
+        type = VT_UINT16;
+    } else if (strcmp(string, "u32") == 0) {
+        type = VT_UINT32;
+    } else if (strcmp(string, "u64") == 0) {
+        type = VT_UINT64;
+    } else if (strcmp(string, "f32") == 0) {
+        type = VT_FLOAT32;
+    } else if (strcmp(string, "f64") == 0) {
+        type = VT_FLOAT64;
+    }
+
+    return type;
+}
 
 Value cast_value(Value value, ValueType cast_type) {
     long double intermed_val = 0;

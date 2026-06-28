@@ -1,3 +1,4 @@
+#include "value_types.h"
 #include <interp.h>
 #include <mem.h>
 #include <parser.h>
@@ -111,6 +112,34 @@ EvalResult evaluate_var_stat(Scope* scope, Node node) {
 
         scope_define_var(scope, name, value);
     }
+
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_NONE,
+    };
+}
+
+EvalResult evaluate_fn_stat(Scope* scope, Node node) {
+    NodeFunctionData* data = (NodeFunctionData*) node.pool_ptr;
+
+    char* name = ((NodeLiteralData*)(data->ident.pool_ptr))->value;
+    char* type = ((NodeLiteralData*)(data->type.pool_ptr))->value;
+
+    scope_declare_var(scope, name);
+
+    ValueFunction fn_value = (ValueFunction) {
+        .params_names = { 0 },
+        .params_types = { 0 },
+        .node = data->block,
+        .return_type = get_value_type_from_string(type),
+    };
+
+    // TODO: Free
+    ValueFunction* fn_ptr = malloc(sizeof(ValueFunction));
+    *fn_ptr = fn_value;
+
+    // TODO: Improve pointers here
+    scope_define_var(scope, name, (Value) { .type = VT_UINT64, .value.u64 = (uint64_t) fn_ptr });
 
     return (EvalResult) {
         .value = (Value) { 0 },
@@ -614,6 +643,9 @@ EvalResult evaluate_node(Scope* scope, Node node) {
         case NT_VAR_STAT:
             return evaluate_var_stat(scope, node);
 
+        case NT_FUNCTION_STAT:
+            return evaluate_fn_stat(scope, node);
+
         case NT_IF_STAT:
             return evaluate_if_stat(scope, node);
 
@@ -660,16 +692,23 @@ void run_interpreter(Interpreter* interp) {
     NodeBlockData* data = (NodeBlockData*) interp->ast.pool_ptr;
 
     for (int32_t i = 0; i < data->count; ++i) {
-        EvalResult result = evaluate_node(&interp->scope, data->nodes[i]);
-        Value value = result.value;
+        evaluate_node(&interp->scope, data->nodes[i]);
+    }
 
-        // TODO: Temporary
-        if (result.break_type == EBT_RETURN) {
-            break;
-        }
+    Value main_fn_ptr = scope_get_var(&interp->scope, "main");
+    ValueFunction* main_fn_value = (ValueFunction*) main_fn_ptr.value.u64;
+    NodeBlockData* fn_data = (NodeBlockData*) main_fn_value->node.pool_ptr;
+
+    for (int32_t i = 0; i < fn_data->count; ++i) {
+        EvalResult result = evaluate_node(&interp->scope, fn_data->nodes[i]);
+        Value value = result.value;
 
         printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
         switch (value.type) {
+            case VT_NONE:
+                printf("none\n");
+                break;
+
             case VT_INT8:
                 printf("%d\n", value.value.i8);
                 break;
@@ -711,8 +750,13 @@ void run_interpreter(Interpreter* interp) {
                 break;
 
             default:
-                printf("none\n");
+                printf("undefined\n");
                 break;
+        }
+
+        // TODO: Temporary
+        if (result.break_type == EBT_RETURN) {
+            break;
         }
     }
 }
