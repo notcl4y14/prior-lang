@@ -1,11 +1,9 @@
 ## TODO:
 
-- [x] Tokens
-  - [x] Add Positions to Tokens
-- [x] Lexer
+- [ ] Lexer
   - [x] Implement errors
+  - [ ] Fix that TODO with out-of-bounds access
 - [ ] AST
-  - [ ] Combine Update Expression with Unary Expression if needed
   - [x] Implement `else if` and `else`
   - [x] Make `if`, `while` statements use Expression instead of just Block
   - [x] Array type expression `[]type`
@@ -15,16 +13,26 @@
   - [x] Switch statement `switch (<expr>) <switch-block>`
   - [x] Implement enum
   - [ ] Switch from memory arena to allocation tree to allow AST optimizations
-  - [ ] Implement casts
   - [ ] Implement positions for nodes
-- [ ] Semantics Check
+  - [ ] Implement casts
+  - [ ] Combine Update Expression with Unary Expression if needed
+- [ ] Semantics
   - [x] Implement error system
   - [ ] Implement auto-cast
+  - [ ] Custom types
+  - [ ] Scoping
+  - [ ] Let the semantics system declare global variables instead of the interpreter
+- [ ] Interpterer
+  - [ ] Implement error system
+  - [ ] Handle errors
+    - [ ] Division by 0
+    - [ ] Variable definition
+    - [ ] Function Arguments and Parameters
+  - [ ] Isolate function call scope to the global state
+    - The function you're calling should not see your local variables
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
 
-- [ ] Bytecode
-  - [ ] Make the Bytecode Structure compatible with assembly to allow Assembly Generation
-    - [ ] Implement registers
-- [ ] Assembly Generator
+- [ ] Compilation
+  - [ ] Assembly Generation
