@@ -17,4 +17,16 @@ fn main (): void {
 
 ## How to build
 
-Use `bash build.sh` to build the program. No CMake yet, apologies.
+```sh
+mkdir build && cd build/
+cmake .. && cmake --build .
+```
+
+## Testing (developers)
+
+```sh
+# Build test
+cmake --build . -t build_tests
+# Run test
+cmake --build . -t test
+```
