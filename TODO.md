@@ -12,7 +12,7 @@
   - [x] Implement `break` and `continue`
   - [x] Switch statement `switch (<expr>) <switch-block>`
   - [x] Implement enum
-  - [ ] Switch from memory arena to allocation tree to allow AST optimizations
+  - [x] Switch from memory arena to allocation tree to allow AST optimizations
   - [ ] Implement positions for nodes
   - [ ] Implement casts
   - [ ] Combine Update Expression with Unary Expression if needed

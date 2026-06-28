@@ -5,44 +5,45 @@
 #include <stdio.h>
 #include <string.h>
 
-ValueType process_node(Semantics* s, Node node);
+ValueType process_node(Semantics* s, Node* node);
 
-ValueType process_integer_lit(Semantics* s, Node node) {
+ValueType process_integer_lit(Semantics* s, Node* node) {
     return VT_INT32;
 }
 
-ValueType process_float_lit(Semantics* s, Node node) {
+ValueType process_float_lit(Semantics* s, Node* node) {
     return VT_FLOAT32;
 }
 
-ValueType process_ident_lit(Semantics* s, Node node) {
+ValueType process_ident_lit(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
-ValueType process_return_stat(Semantics* s, Node node) {
-    NodeReturnStatData* data = (NodeReturnStatData*) node.pool_ptr;
+ValueType process_return_stat(Semantics* s, Node* node) {
+    NRetStat ret_stat = node->data.ret_stat;
 
-    if (data->value.type == NT_NONE) {
-        data->return_type = VT_NONE;
+    if (ret_stat.expr == NULL) {
+        // ret_stat.return_type = VT_NONE;
         return VT_NONE;
     }
 
-    data->return_type = process_node(s, data->value);
-    return data->return_type;
+    // data->return_type = process_node(s, data->value);
+    // return data->return_type;
+    return process_node(s, ret_stat.expr);
 }
 
-ValueType process_break_stat(Semantics* s, Node node) {
+ValueType process_break_stat(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
-ValueType process_continue_stat(Semantics* s, Node node) {
+ValueType process_continue_stat(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
-ValueType process_var_stat(Semantics* s, Node node) {
-    NodeVarStatData* data = (NodeVarStatData*) node.pool_ptr;
+ValueType process_var_stat(Semantics* s, Node* node) {
+    NVarStat var_stat = node->data.var_stat;
 
-    char* type_name = ((NodeLiteralData*)(data->type.pool_ptr))->value;
+    char* type_name = var_stat.ident->data.ident_lit.value;
 
     ValueType variable_type = VT_NONE;
 
@@ -71,58 +72,58 @@ ValueType process_var_stat(Semantics* s, Node node) {
     // ValueType value_type = process_node(s, data->value);
 
     // printf("%s\n", ValueTypeNames[variable_type]);
-    data->return_type = variable_type;
+    // data->return_type = variable_type;
 
     return variable_type;
 }
 
-ValueType process_fn_stat(Semantics* s, Node node) {
-    NodeFunctionData* data = (NodeFunctionData*) node.pool_ptr;
+ValueType process_fn_stat(Semantics* s, Node* node) {
+    NFuncStat func_stat = node->data.func_stat;
 
     // char* type_name = ((NodeLiteralData*)(data->type.pool_ptr))->value;
 
-    process_node(s, data->block);
+    process_node(s, func_stat.body);
 
     return VT_NONE;
 }
 
 
-ValueType process_if_stat(Semantics* s, Node node) {
-    NodeIfStatData* data = (NodeIfStatData*) node.pool_ptr;
+ValueType process_if_stat(Semantics* s, Node* node) {
+    NIfStat if_stat = node->data.if_stat;
 
-    process_node(s, data->expr);
-    process_node(s, data->block);
+    process_node(s, if_stat.condition);
+    process_node(s, if_stat.body);
 
-    if (data->ifelse.type != NT_NONE) {
-        process_node(s, data->ifelse);
+    if (if_stat.alternate != NULL) {
+        process_node(s, if_stat.alternate);
     }
 
     return VT_NONE;
 }
 
-ValueType process_while_stat(Semantics* s, Node node) {
-    NodeWhileData* data = (NodeWhileData*) node.pool_ptr;
+ValueType process_while_stat(Semantics* s, Node* node) {
+    NWhileStat while_stat = node->data.while_stat;
 
-    process_node(s, data->expr);
-    process_node(s, data->block);
+    process_node(s, while_stat.condition);
+    process_node(s, while_stat.body);
 
     return VT_NONE;
 }
 
-ValueType process_block(Semantics* s, Node node) {
-    NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
+ValueType process_block(Semantics* s, Node* node) {
+    NBlock block = node->data.block;
 
     ValueType last_type = VT_NONE;
 
-    for (int32_t i = 0; i < data->count; ++i) {
-        last_type = process_node(s, data->nodes[i]);
+    for (int32_t i = 0; i < block.nodes.count; ++i) {
+        last_type = process_node(s, &block.nodes.nodes[i]);
     }
 
     return last_type;
 }
 
-ValueType process_bin_expr(Semantics* s, Node node) {
-    NodeBinExprData* data = (NodeBinExprData*) node.pool_ptr;
+ValueType process_bin_expr(Semantics* s, Node* node) {
+    NBinExpr bin_expr = node->data.bin_expr;
 
     // int + int = int
     // float + float = float
@@ -131,10 +132,10 @@ ValueType process_bin_expr(Semantics* s, Node node) {
 
     // TODO: Implement auto-casting
 
-    Node left = data->left;
+    Node* left = bin_expr.left;
     ValueType left_type = process_node(s, left);
 
-    Node right = data->right;
+    Node* right = bin_expr.right;
     process_node(s, right);
     // ValueType right_type = process_node(s, right);
 
@@ -145,38 +146,41 @@ ValueType process_bin_expr(Semantics* s, Node node) {
     //     return VT_NONE;
     // }
 
-    data->return_type = left_type;
+    // data->return_type = left_type;
 
     return left_type;
 }
 
-ValueType process_update_expr(Semantics* s, Node node) {
-    NodeUpdateExprData* data = (NodeUpdateExprData*) node.pool_ptr;
-    data->return_type = process_node(s, data->expr);
+ValueType process_update_expr(Semantics* s, Node* node) {
+    NUpdateExpr update_expr = node->data.update_expr;
+    // data->return_type = process_node(s, data->expr);
 
-    return data->return_type;
+    // return data->return_type;
+    return process_node(s, update_expr.expr);
 }
 
-ValueType process_assign_expr(Semantics* s, Node node) {
-    NodeAssignExprData* data = (NodeAssignExprData*) node.pool_ptr;
-    data->return_type = process_node(s, data->value);
+ValueType process_assign_expr(Semantics* s, Node* node) {
+    NAssignExpr assign_expr = node->data.assign_expr;
+    // data->return_type = process_node(s, data->value);
 
-    return data->return_type;
+    // return data->return_type;
+    return process_node(s, assign_expr.value);
 }
 
-ValueType process_unary_expr(Semantics* s, Node node) {
-    NodeUnaryExprData* data = (NodeUnaryExprData*) node.pool_ptr;
-    data->return_type = process_node(s, data->expr);
+ValueType process_unary_expr(Semantics* s, Node* node) {
+    NUnExpr un_expr = node->data.un_expr;
+    // data->return_type = process_node(s, data->expr);
 
-    return data->return_type;
+    // return data->return_type;
+    return process_node(s, un_expr.expr);
 }
 
-ValueType process_call_expr(Semantics* s, Node node) {
+ValueType process_call_expr(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
-ValueType process_node(Semantics* s, Node node) {
-    switch (node.type) {
+ValueType process_node(Semantics* s, Node* node) {
+    switch (node->type) {
         case NT_INTEGER_LIT:
             return process_integer_lit(s, node);
 
@@ -199,7 +203,7 @@ ValueType process_node(Semantics* s, Node node) {
         case NT_VAR_STAT:
             return process_var_stat(s, node);
 
-        case NT_FUNCTION_STAT:
+        case NT_FUNC_STAT:
             return process_fn_stat(s, node);
 
         case NT_IF_STAT:
@@ -209,14 +213,14 @@ ValueType process_node(Semantics* s, Node node) {
             return process_while_stat(s, node);
 
 
-        case NT_BLOCK_EXPR:
+        case NT_BLOCK:
             return process_block(s, node);
 
 
         case NT_BIN_EXPR:
             return process_bin_expr(s, node);
 
-        case NT_UNARY_EXPR:
+        case NT_UN_EXPR:
             return process_unary_expr(s, node);
 
         case NT_UPDATE_EXPR:
@@ -229,7 +233,7 @@ ValueType process_node(Semantics* s, Node node) {
             return process_call_expr(s, node);
 
         default:
-            printf("Unhandled semantics node type: %s\n", NodeTypeNames[node.type]);
+            printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);
             assert(false);
             return VT_NONE;
     }
@@ -257,11 +261,11 @@ Semantics create_semantics() {
     };
 }
 
-void process_semantics(Semantics* s, Node ast) {
-    NodeBlockData* program_data = (NodeBlockData*) ast.pool_ptr;
+void process_semantics(Semantics* s, Node* ast) {
+    NProgram program = ast->data.program;
 
-    for (int32_t i = 0; i < program_data->count; ++i) {
-        Node node = program_data->nodes[i];
+    for (int32_t i = 0; i < program.nodes.count; ++i) {
+        Node* node = &program.nodes.nodes[i];
         process_node(s, node);
     }
 }

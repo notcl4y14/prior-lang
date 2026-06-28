@@ -1,14 +1,12 @@
-#include "interp.h"
-#include "value.h"
-#include <stdbool.h>
-#include <stddef.h>
-#include <vm.h>
-#include <bytecode.h>
+#include <interp.h>
+#include <value.h>
 #include <ast.h>
 #include <parser.h>
 #include <lexer.h>
 #include <semantics.h>
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +63,6 @@ void usage() {
     printf("        --p-stages - Print the stages of the compiling process\n");
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
-    printf("        --p-bytecode - Print the bytecode result\n");
     printf("        --no-semantics - Disable semantics (type checking)\n");
     printf("    run <file> - Start a VM and runs the bytecode file\n");
     printf("    interpret <file> - Interpret and run the file\n");
@@ -120,13 +117,12 @@ void compile(int32_t argc, char* argv[]) {
     if (show_stages)
         printf("\nParsing AST...\n");
 
-    Parser parser = create_parser(&token_array);
+    Parser parser = create_parser(token_array);
     Node result = parse_tokens(&parser);
 
     if (parser.error) {
         printf("%ld:%ld: %s\n", parser.errpos.line + 1, parser.errpos.column + 1, parser_get_error(&parser));
 
-        free_node_pool(&parser.node_pool);
         free_token_array(&token_array);
         free_lexer(&lexer);
 
@@ -137,7 +133,7 @@ void compile(int32_t argc, char* argv[]) {
 
     if (show_ast) {
         printf("\n==== AST ====\n");
-        print_node_tree(result, 0);
+        print_node_tree(&result, 0);
     }
 
     // printf("The NodePool's used size is %ld bytes\n", parser.node_pool.count);
@@ -148,12 +144,11 @@ void compile(int32_t argc, char* argv[]) {
             printf("Processing semantics...\n");
 
         Semantics semantics = create_semantics();
-        process_semantics(&semantics, result);
+        process_semantics(&semantics, &result);
 
         if (semantics.error) {
             printf("%s\n", get_semantics_error(&semantics));
 
-            free_node_pool(&parser.node_pool);
             free_token_array(&token_array);
             free_lexer(&lexer);
 
@@ -163,73 +158,32 @@ void compile(int32_t argc, char* argv[]) {
         }
     }
 
-    if (show_stages)
-        printf("Generating bytecode...\n");
+    // if (show_stages)
+    //     printf("Generating bytecode...\n");
 
-    Bytegen bytegen = {0};
-    init_bytegen(&bytegen, result);
+    // Bytegen bytegen = {0};
+    // init_bytegen(&bytegen, result);
 
-    bytegen_generate(&bytegen);
+    // bytegen_generate(&bytegen);
 
-    if (show_bytecode) {
-        printf("\n==== BYTECODE ====\n");
-        print_bytecode(&bytegen.result);
-        printf("\n");
-    }
+    // if (show_bytecode) {
+    //     printf("\n==== BYTECODE ====\n");
+    //     print_bytecode(&bytegen.result);
+    //     printf("\n");
+    // }
 
-    FILE* out_file = fopen("out.prb", "w");
+    // FILE* out_file = fopen("out.prb", "w");
 
-    fwrite(bytegen.result.bytes, sizeof(uint8_t), bytegen.result.count, out_file);
+    // fwrite(bytegen.result.bytes, sizeof(uint8_t), bytegen.result.count, out_file);
 
-    fclose(out_file);
+    // fclose(out_file);
 
-    free_bytecode(&bytegen.result);
-    free_node_pool(&parser.node_pool);
+    // free_bytecode(&bytegen.result);
     free_token_array(&token_array);
     free_lexer(&lexer);
 
     free(lexer_code);
     lexer_code = NULL;
-}
-
-void run(int32_t argc, char* argv[]) {
-    Bytecode bytecode;
-
-    char* filename = argv[2];
-    FILE* input_file = fopen(filename, "r");
-
-    fseek(input_file, 0, SEEK_END);
-    size_t filesize = ftell(input_file);
-    fseek(input_file, 0, SEEK_SET);
-
-    init_bytecode(&bytecode, filesize);
-    fread(bytecode.bytes, sizeof(uint8_t), filesize, input_file);
-
-    fclose(input_file);
-
-    bytecode.count = filesize;
-    bytecode.capacity = filesize;
-
-    VM vm;
-    init_vm(&vm, bytecode);
-
-    start_vm(&vm);
-
-    if (vm.errcode == VM_ERR_ZERO_DIVISION) {
-        printf("Runtime error: Division by zero\n");
-    }
-
-    printf("Last stack value: [%d, %d, %d, %d]\n",
-        *(int32_t*) &vm.stack[0],
-        *(int32_t*) &vm.stack[4],
-        *(int32_t*) &vm.stack[8],
-        *(int32_t*) &vm.stack[12]
-    );
-
-    printf("Last int stack value: %d\n", *(int32_t*) &vm.stack[0]);
-    printf("Last float stack value: %f\n", *(float*) &vm.stack[0]);
-
-    free_bytecode(&bytecode);
 }
 
 void interpret(int32_t argc, char* argv[]) {
@@ -265,13 +219,12 @@ void interpret(int32_t argc, char* argv[]) {
 
 
     /* Parser Stage */
-    Parser parser = create_parser(&token_array);
+    Parser parser = create_parser(token_array);
     Node result = parse_tokens(&parser);
 
     if (parser.error) {
         printf("%ld:%ld: %s\n", parser.errpos.line + 1, parser.errpos.column + 1, parser_get_error(&parser));
 
-        free_node_pool(&parser.node_pool);
         free_token_array(&token_array);
         free_lexer(&lexer);
 
@@ -282,12 +235,11 @@ void interpret(int32_t argc, char* argv[]) {
 
     /* Semantics Stage */
     Semantics semantics = create_semantics();
-    process_semantics(&semantics, result);
+    process_semantics(&semantics, &result);
 
     if (semantics.error) {
         printf("%s\n", get_semantics_error(&semantics));
 
-        free_node_pool(&parser.node_pool);
         free_token_array(&token_array);
         free_lexer(&lexer);
 
@@ -306,7 +258,6 @@ void interpret(int32_t argc, char* argv[]) {
     run_interpreter(&interp);
 
     free_interpreter(&interp);
-    free_node_pool(&parser.node_pool);
     free_token_array(&token_array);
     free_lexer(&lexer);
 
@@ -325,8 +276,6 @@ int32_t main(int32_t argc, char* argv[]) {
 
     if (strcmp(argv[1], "compile") == 0) {
         compile(argc, argv);
-    } else if (strcmp(argv[1], "run") == 0) {
-        run(argc, argv);
     } else if (strcmp(argv[1], "interpret") == 0) {
         interpret(argc, argv);
     } else {

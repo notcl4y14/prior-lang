@@ -13,6 +13,6 @@ typedef struct Semantics {
 void set_semantics_error(Semantics* s, const char* errmsg);
 const char* get_semantics_error(Semantics* s);
 Semantics create_semantics();
-void process_semantics(Semantics* s, Node ast);
+void process_semantics(Semantics* s, Node* ast);
 
 #endif

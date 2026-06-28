@@ -21,232 +21,241 @@ typedef enum NodeType {
     NT_VAR_STAT,
     NT_ENUM_STAT,
     NT_STRUCT_STAT,
-    NT_FUNCTION_STAT,
+    NT_FUNC_STAT,
     NT_IF_STAT,
     NT_WHILE_STAT,
     NT_SWITCH_STAT,
 
-    NT_ARRAY_EXPR,
     NT_BIN_EXPR,
-    NT_UNARY_EXPR,
+    NT_UN_EXPR,
     NT_UPDATE_EXPR,
     NT_TERN_EXPR,
     NT_ASSIGN_EXPR,
     NT_CALL_EXPR,
     NT_MEMBER_EXPR,
 
-    NT_BLOCK_EXPR,
-    NT_PARAM_LIST,
-    NT_PARAM,
-    NT_ENUM_ENTRY_LIST,
+    NT_BLOCK,
+    NT_PARAMETER,
     NT_ENUM_ENTRY,
-    NT_ARG_LIST,
-    NT_ARG,
-    NT_FIELD_LIST,
+    NT_ARGUMENT,
     NT_FIELD,
     NT_ARRAY_TYPE,
-    NT_SWITCH_ENTRY_LIST,
-    NT_SWITCH_ENTRY,
+    NT_SWITCH_CASE,
 
     NT_INTEGER_LIT,
     NT_FLOAT_LIT,
     NT_STRING_LIT,
     NT_IDENT_LIT,
+    NT_ARRAY_LIT,
 } NodeType;
 
 extern const char* NodeTypeNames[];
 
-// TODO: Improve this
-typedef struct Node {
-    NodeType type;
-    void* pool_ptr;
-} Node;
+typedef struct Node Node;
 
-
-
-/***
- * NODE DATA STRUCTURES
- */
-typedef struct NodeReturnStatData {
-    Node value;
-
-    ValueType return_type;
-} NodeReturnStatData;
-
-typedef struct NodeVarStatData {
-    bool is_const;
-    Node ident;
-    Node type;
-    Node value;
-
-    ValueType return_type;
-} NodeVarStatData;
-
-typedef struct NodeEnumData {
-    Node ident;
-    Node entries;
-} NodeEnumData;
-
-typedef struct NodeStructData {
-    Node ident;
-    Node fields;
-} NodeStructData;
-
-typedef struct NodeFunctionData {
-    Node ident;
-    Node params;
-    Node type;
-    Node block;
-} NodeFunctionData;
-
-typedef struct NodeIfStatData {
-    Node expr;
-    Node block;
-    Node ifelse;
-} NodeIfStatData;
-
-typedef struct NodeWhileData {
-    Node expr;
-    Node block;
-} NodeWhileData;
-
-typedef struct NodeSwitchData {
-    Node lookup;
-    Node block;
-} NodeSwitchData;
-
-
-
-typedef struct NodeArrayExprData {
+typedef struct NodeArr {
     Node*  nodes;
-    size_t count;
-} NodeArrayExprData;
-
-typedef struct NodeAssignExprData {
-    TokenType op;
-    Node ident;
-    Node value;
-
-    ValueType return_type;
-} NodeAssignExprData;
-
-typedef struct NodeBinExprData {
-    TokenType op;
-    Node      left;
-    Node      right;
-
-    ValueType return_type;
-} NodeBinExprData;
-
-typedef struct NodeUnaryExprData {
-    TokenType op;
-    Node      expr;
-
-    ValueType return_type;
-} NodeUnaryExprData;
-
-typedef struct NodeUpdateExprData {
-    TokenType op;
-    bool      prefix;
-    Node      expr;
-
-    ValueType return_type;
-} NodeUpdateExprData;
-
-typedef struct NodeCallExprData {
-    Node member;
-    Node args;
-} NodeCallExprData;
-
-typedef struct NodeMemberExprData {
-    Node object;
-    Node property;
-} NodeMemberExprData;
-
-
-
-typedef struct NodeBlockData {
-    Node*  nodes;
-    size_t count;
-} NodeBlockData;
-
-typedef struct NodeParamData {
-    Node name;
-    Node type;
-} NodeParamData;
-
-typedef struct NodeParamListData {
-    Node*  nodes;
-    size_t count;
-} NodeParamListData;
-
-typedef struct NodeFieldData {
-    Node name;
-    Node type;
-} NodeFieldData;
-
-typedef struct NodeFieldListData {
-    Node*  nodes;
-    size_t count;
-} NodeFieldListData;
-
-typedef struct NodeEnumEntryData {
-    Node name;
-    Node value;
-} NodeEnumEntryData;
-
-typedef struct NodeEnumEntryListData {
-    Node*  nodes;
-    size_t count;
-} NodeEnumEntryListData;
-
-typedef struct NodeArgData {
-    Node expr;
-} NodeArgData;
-
-typedef struct NodeArgListData {
-    Node*  nodes;
-    size_t count;
-} NodeArgListData;
-
-typedef struct NodeArrayTypeData {
-    Node size;
-    Node type;
-} NodeArrayTypeData;
-
-typedef struct NodeSwitchEntryListData {
-    Node*  entries;
-    size_t count;
-} NodeSwitchEntryListData;
-
-typedef struct NodeSwitchEntryData {
-    bool is_default;
-    Node expr;
-    Node block;
-} NodeSwitchEntryData;
-
-
-
-typedef struct NodeLiteralData {
-    char*  value;
-    size_t size;
-} NodeLiteralData;
-
-
-
-/***
- * NODE POOL
- */
-typedef struct NodePool {
-    void*  data;
     size_t count;
     size_t capacity;
-} NodePool;
+} NodeArr;
 
-void init_node_pool(NodePool* npool, size_t size);
-void free_node_pool(NodePool* npool);
-void* allocate_node_pool(NodePool* npool, size_t size);
-void* allocate_and_write_node_pool(NodePool* npool, const void* data, size_t size);
+NodeArr create_node_arr(size_t size);
+void free_node_arr(NodeArr* narr);
+void add_to_node_arr(NodeArr* narr, Node node);
+
+/***
+ * NODE TYPES
+ */
+
+/* Program */
+typedef struct NProgram {
+    NodeArr nodes;
+} NProgram;
+
+/* LITERALS */
+typedef struct NIntLit {
+    char*  value;
+    size_t size;
+} NIntLit;
+
+typedef struct NFloatLit {
+    char*  value;
+    size_t size;
+} NFloatLit;
+
+typedef struct NStringLit {
+    char*  value;
+    size_t size;
+} NStringLit;
+
+typedef struct NIdentLit {
+    char*  value;
+    size_t size;
+} NIdentLit;
+
+typedef struct NArrayLit {
+    NodeArr values;
+} NArrayLit;
+
+
+/* STATEMENTS */
+typedef struct NRetStat {
+    Node* expr;
+} NRetStat;
+
+typedef struct NVarStat {
+    bool  constant;
+    Node* ident;
+    Node* type;
+    Node* value;
+} NVarStat;
+
+typedef struct NEnumStat {
+    Node*   ident;
+    NodeArr entries;
+} NEnumStat;
+
+typedef struct NStructStat {
+    Node*   ident;
+    NodeArr fields;
+} NStructStat;
+
+typedef struct NFuncStat {
+    Node*   ident;
+    NodeArr params;
+    Node*   type;
+    Node*   body;
+} NFuncStat;
+
+typedef struct NIfStat {
+    Node* condition;
+    Node* body;
+    Node* alternate;
+} NIfStat;
+
+typedef struct NWhileStat {
+    Node* condition;
+    Node* body;
+} NWhileStat;
+
+typedef struct NSwitchStat {
+    Node*   lookup;
+    NodeArr cases;
+} NSwitchStat;
+
+
+/* STANDALONE NODES */
+typedef struct NBlock {
+    NodeArr nodes;
+} NBlock;
+
+typedef struct NParameter {
+    Node* ident;
+    Node* type;
+    Node* defval; // default value
+} NParameter;
+
+typedef struct NField {
+    Node* ident;
+    Node* type;
+} NField;
+
+typedef struct NArgument {
+    Node* ident; // (expr, expr, ident: expr)
+    Node* expr;
+} NArgument;
+
+typedef struct NEnumEntry {
+    Node* ident;
+    Node* value;
+} NEnumEntry;
+
+typedef struct NSwitchCase {
+    Node* condition;
+    Node* body;
+} NSwitchCase;
+
+typedef struct NArrayType {
+    Node* number; // [number]
+    Node* type;
+} NArrayType;
+
+
+/* EXPRESSIONS */
+typedef struct NAssignExpr {
+    TokenType op;
+    Node*     ident;
+    Node*     value;
+} NAssignExpr;
+
+typedef struct NBinExpr {
+    TokenType op;
+    Node*     left;
+    Node*     right;
+} NBinExpr;
+
+typedef struct NUnExpr {
+    TokenType op;
+    Node*     expr;
+} NUnExpr;
+
+typedef struct NUpdateExpr {
+    bool      prefixed;
+    TokenType op;
+    Node*     expr;
+} NUpdateExpr;
+
+typedef struct NCallExpr {
+    Node*   member;
+    NodeArr args;
+} NCallExpr;
+
+typedef struct NMemberExpr {
+    Node* object;
+    Node* property;
+} NMemberExpr;
+
+/***
+ * NODE
+ */
+typedef union NodeData {
+    NProgram program;
+
+    NIntLit    int_lit;
+    NFloatLit  float_lit;
+    NStringLit string_lit;
+    NIdentLit  ident_lit;
+    NArrayLit  array_lit;
+
+    NRetStat    ret_stat;
+    NVarStat    var_stat;
+    NEnumStat   enum_stat;
+    NStructStat struct_stat;
+    NFuncStat   func_stat;
+    NIfStat     if_stat;
+    NWhileStat  while_stat;
+    NSwitchStat switch_stat;
+
+    NBlock      block;
+    NParameter  parameter;
+    NField      field;
+    NArgument   argument;
+    NEnumEntry  enum_entry;
+    NSwitchCase switch_case;
+    NArrayType  array_type;
+
+    NAssignExpr assign_expr;
+    NBinExpr    bin_expr;
+    NUnExpr     un_expr;
+    NUpdateExpr update_expr;
+    NCallExpr   call_expr;
+    NMemberExpr member_expr;
+} NodeData;
+
+typedef struct Node {
+    NodeType type;
+    NodeData data;
+} Node;
 
 
 
@@ -254,16 +263,15 @@ void* allocate_and_write_node_pool(NodePool* npool, const void* data, size_t siz
  * PARSER
  */
 typedef struct Parser {
-    TokenArray* tokens;
-    size_t cursor;
-    NodePool node_pool;
+    TokenArray tokens;
+    size_t     cursor;
 
     char errmsg[PARSER_ERROR_SIZE];
     bool error;
     TokenPosition errpos;
 } Parser;
 
-Parser create_parser(TokenArray* token_array);
+Parser create_parser(TokenArray token_array);
 void free_parser(Parser* parser);
 const Token* parser_at(Parser* parser);
 const Token* parser_advance(Parser* parser);

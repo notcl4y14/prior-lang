@@ -12,7 +12,7 @@ typedef struct ValueFunctionParam {
 typedef struct ValueFunction {
     ValueFunctionParam params[256];
     ValueType return_type;
-    Node node;
+    Node* node;
 } ValueFunction;
 
 #endif
