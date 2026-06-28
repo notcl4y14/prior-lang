@@ -83,7 +83,6 @@ void print_return_stat_tree(Node node, int32_t indent) {
     print_indent(indent);
     printf("[RETURN_STAT]:\n");
 
-    print_indent(indent + 1); // TODO: remove this, idk why I put this here
     print_node_tree(varstat->value, indent + 1);
 }
 

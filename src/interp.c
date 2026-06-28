@@ -77,6 +77,7 @@ EvalResult evaluate_return_stat(Scope* scope, Node node) {
 
     if (data->value.type != NT_NONE) {
         value = evaluate_node(scope, data->value).value;
+        // value = cast_value(value, data->return_type);
     }
 
     return (EvalResult) {

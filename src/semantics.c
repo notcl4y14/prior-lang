@@ -70,15 +70,18 @@ ValueType process_var_stat(Semantics* s, Node node) {
 
     // ValueType value_type = process_node(s, data->value);
 
+    // printf("%s\n", ValueTypeNames[variable_type]);
     data->return_type = variable_type;
 
     return variable_type;
 }
 
 ValueType process_fn_stat(Semantics* s, Node node) {
-    // NodeFunctionData* data = (NodeFunctionData*) node.pool_ptr;
+    NodeFunctionData* data = (NodeFunctionData*) node.pool_ptr;
 
     // char* type_name = ((NodeLiteralData*)(data->type.pool_ptr))->value;
+
+    process_node(s, data->block);
 
     return VT_NONE;
 }

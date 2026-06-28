@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <value.h>
 
@@ -84,7 +85,7 @@ Value cast_value(Value value, ValueType cast_type) {
         case VT_FLOAT32: result_value.value.f32 = (float) intermed_val;   break;
         case VT_FLOAT64: result_value.value.f64 = (double) intermed_val;  break;
 
-        default: assert(false); break;
+        default: printf("%s\n", ValueTypeNames[cast_type]); assert(false); break;
     }
 
     return result_value;
