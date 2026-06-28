@@ -605,6 +605,24 @@ EvalResult evaluate_assign_expr(Scope* scope, Node node) {
     };
 }
 
+EvalResult evaluate_call_expr(Scope* scope, Node node) {
+    NodeCallExprData* data = (NodeCallExprData*) node.pool_ptr;
+
+    // TODO: Member expr
+    if (data->member.type == NT_MEMBER_EXPR) {
+        printf("Functions with idents only yet\n");
+        exit(1);
+    }
+
+    Value fn_ptr = evaluate_node(scope, data->member).value;
+    ValueFunction* fn_value = (ValueFunction*) fn_ptr.value.u64;
+
+    // TODO: Replace with call function and allow args
+    EvalResult result = evaluate_node(scope, fn_value->node);
+
+    return result;
+}
+
 EvalResult evaluate_node(Scope* scope, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT: {
@@ -666,6 +684,9 @@ EvalResult evaluate_node(Scope* scope, Node node) {
 
         case NT_ASSIGN_EXPR:
             return evaluate_assign_expr(scope, node);
+
+        case NT_CALL_EXPR:
+            return evaluate_call_expr(scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node.type]);

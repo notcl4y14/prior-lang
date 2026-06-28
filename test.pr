@@ -1,4 +1,7 @@
+fn func(): i32 {
+    return 69;
+}
+
 fn main(): i32 {
-    const x: i32 = 10;
-    return x * 2;
+    return func();
 }

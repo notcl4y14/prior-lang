@@ -171,6 +171,10 @@ ValueType process_unary_expr(Semantics* s, Node node) {
     return data->return_type;
 }
 
+ValueType process_call_expr(Semantics* s, Node node) {
+    return VT_NONE;
+}
+
 ValueType process_node(Semantics* s, Node node) {
     switch (node.type) {
         case NT_INTEGER_LIT:
@@ -181,6 +185,7 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_IDENT_LIT:
             return process_ident_lit(s, node);
+
 
         case NT_RETURN_STAT:
             return process_return_stat(s, node);
@@ -203,8 +208,10 @@ ValueType process_node(Semantics* s, Node node) {
         case NT_WHILE_STAT:
             return process_while_stat(s, node);
 
+
         case NT_BLOCK_EXPR:
             return process_block(s, node);
+
 
         case NT_BIN_EXPR:
             return process_bin_expr(s, node);
@@ -217,6 +224,9 @@ ValueType process_node(Semantics* s, Node node) {
 
         case NT_ASSIGN_EXPR:
             return process_assign_expr(s, node);
+
+        case NT_CALL_EXPR:
+            return process_call_expr(s, node);
 
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node.type]);
