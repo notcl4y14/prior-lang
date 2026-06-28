@@ -4,12 +4,16 @@
 #include <parser.h>
 #include <value.h>
 
+typedef struct Scope Scope;
+
 typedef struct Scope {
+    Scope* parent;
     char* variables_k[256];
     Value variables_v[256];
+    uint32_t varcount;
 } Scope;
 
-Scope create_scope();
+Scope create_scope(Scope* parent);
 void free_scope(Scope* scope);
 void scope_declare_var(Scope* scope, char* name);
 void scope_define_var(Scope* scope, char* name, Value value);

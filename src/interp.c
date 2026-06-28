@@ -9,13 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-Scope create_scope() {
+Scope create_scope(Scope* parent) {
     Scope scope = (Scope) { 0 };
+    scope.parent = parent;
     return scope;
 }
 
 void free_scope(Scope* scope) {
-    for (int32_t i = 0; i < 256; ++i) {
+    for (int32_t i = 0; i < scope->varcount; ++i) {
         if (scope->variables_k[i] != NULL) {
             free(scope->variables_k[i]);
         }
@@ -26,6 +27,7 @@ void scope_declare_var(Scope* scope, char* name) {
     for (int32_t i = 0; i < 256; ++i) {
         if (scope->variables_k[i] == NULL) {
             scope->variables_k[i] = str_alloc_copy(name);
+            scope->varcount++;
             return;
         }
     }
@@ -34,21 +36,29 @@ void scope_declare_var(Scope* scope, char* name) {
 }
 
 void scope_define_var(Scope* scope, char* name, Value value) {
-    for (int32_t i = 0; i < 256; ++i) {
+    for (int32_t i = 0; i < scope->varcount; ++i) {
         if (strcmp(scope->variables_k[i], name) == 0) {
             scope->variables_v[i] = value;
             return;
         }
     }
 
+    if (scope->parent != NULL) {
+        return scope_define_var(scope->parent, name, value);
+    }
+
     assert(false);
 }
 
 Value scope_get_var(Scope* scope, char* name) {
-    for (int32_t i = 0; i < 256; ++i) {
+    for (int32_t i = 0; i < scope->varcount; ++i) {
         if (strcmp(scope->variables_k[i], name) == 0) {
             return scope->variables_v[i];
         }
+    }
+
+    if (scope->parent != NULL) {
+        return scope_get_var(scope->parent, name);
     }
 
     assert(false);
@@ -158,15 +168,19 @@ EvalResult evaluate_while_stat(Scope* scope, Node node) {
 EvalResult evaluate_block(Scope* scope, Node node) {
     NodeBlockData* data = (NodeBlockData*) node.pool_ptr;
 
+    Scope sub_scope = create_scope(scope);
+
     EvalResult last_result = (EvalResult) { 0 };
 
     for (int32_t i = 0; i < data->count; ++i) {
-        last_result = evaluate_node(scope, data->nodes[i]);
+        last_result = evaluate_node(&sub_scope, data->nodes[i]);
 
         if (last_result.break_type == EBT_RETURN) {
             break;
         }
     }
+
+    free_scope(&sub_scope);
 
     return last_result;
 }
@@ -632,7 +646,7 @@ EvalResult evaluate_node(Scope* scope, Node node) {
 Interpreter create_interpreter(Node ast) {
     Interpreter interp = (Interpreter) {
         .ast = ast,
-        .scope = create_scope(),
+        .scope = create_scope(NULL),
     };
 
     return interp;
