@@ -89,7 +89,6 @@ void free_token_array(TokenArray* tarr) {
     }
 
     free(tarr->tokens);
-
     tarr->tokens = NULL;
 }
 
@@ -417,45 +416,16 @@ Token lexer_tokenize_symbol(Lexer* lexer) {
     char current_char = lexer_step(lexer);
 
     switch (current_char) {
-        case '.':
-            token.type = TT_DOT;
-            break;
-
-        case ',':
-            token.type = TT_COMMA;
-            break;
-
-        case ':':
-            token.type = TT_COLON;
-            break;
-
-        case ';':
-            token.type = TT_SEMICOLON;
-            break;
-
-        case '(':
-            token.type = TT_LPAREN;
-            break;
-
-        case ')':
-            token.type = TT_RPAREN;
-            break;
-
-        case '[':
-            token.type = TT_LBRACKET;
-            break;
-
-        case ']':
-            token.type = TT_RBRACKET;
-            break;
-
-        case '{':
-            token.type = TT_LBRACE;
-            break;
-
-        case '}':
-            token.type = TT_RBRACE;
-            break;
+        case '.': token.type = TT_DOT;       break;
+        case ',': token.type = TT_COMMA;     break;
+        case ':': token.type = TT_COLON;     break;
+        case ';': token.type = TT_SEMICOLON; break;
+        case '(': token.type = TT_LPAREN;    break;
+        case ')': token.type = TT_RPAREN;    break;
+        case '[': token.type = TT_LBRACKET;  break;
+        case ']': token.type = TT_RBRACKET;  break;
+        case '{': token.type = TT_LBRACE;    break;
+        case '}': token.type = TT_RBRACE;    break;
     }
 
     TokenPosition right_pos = lexer->position;
@@ -484,15 +454,15 @@ void free_lexer(Lexer* lexer) {
     }
 }
 
-void add_lexer_error(Lexer* lexer, const char* errmsg) {
-    add_to_error_list(&lexer->error_list, create_error(errmsg, lexer->position));
-}
-
 void load_lexer_code(Lexer* lexer, const char* code, size_t size) {
     lexer->code = alloc_copy(size, code);
     assert(lexer->code != NULL && "Failed to allocate lexer code");
 
     lexer->code_size = size;
+}
+
+void add_lexer_error(Lexer* lexer, const char* errmsg) {
+    add_to_error_list(&lexer->error_list, create_error(errmsg, lexer->position));
 }
 
 TokenArray lexer_tokenize(Lexer* lexer) {
