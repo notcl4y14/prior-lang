@@ -16,7 +16,13 @@ int main(void) {
     Node ast = parse_tokens(&parser);
 
     assert(ast.type == NT_PROGRAM);
+
+    // Check for correct node count
     assert(ast.data.program.nodes.count == 2);
+
+    // Check for correct `foo()` position range
+    assert(ast.data.program.nodes.nodes[1].left_pos.column == 19);
+    assert(ast.data.program.nodes.nodes[1].right_pos.column == 24);
 
     free_parser(&parser);
     free_token_array(&tokens);
