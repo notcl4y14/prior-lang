@@ -595,6 +595,7 @@ NodeArr parse_parameters(Parser* parser) {
         token_type = token->type; // ','|')'
 
         if (token_type == TT_RPAREN) {
+            ending_token = token;
             break;
         } else if (token_type != TT_COMMA) {
             parser_set_error(parser, "Expected ','", token->left_pos);

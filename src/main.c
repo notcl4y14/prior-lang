@@ -18,6 +18,16 @@ bool show_ast = false;
 bool show_bytecode = false;
 bool no_semantics = false;
 
+void print_tokens(TokenArray* tokens) {
+    printf("\n==== TOKENS ====\n");
+    print_token_array(tokens);
+}
+
+void print_ast(Node* ast) {
+    printf("\n==== AST ====\n");
+    print_node_tree(ast, 0);
+}
+
 bool args_contains(int32_t argc, char* argv[], const char* arg) {
     for (int32_t i = 0; i < argc; ++i) {
         if (strcmp(argv[i], arg) == 0) {
@@ -64,8 +74,10 @@ void usage() {
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
     printf("        --no-semantics - Disable semantics (type checking)\n");
-    printf("    run <file> - Start a VM and runs the bytecode file\n");
     printf("    interpret <file> - Interpret and run the file\n");
+    printf("        --p-stages - Print the stages of the compiling process\n");
+    printf("        --p-tokens - Print the tokens of the code\n");
+    printf("        --p-ast    - Print the AST of the code\n");
 }
 
 void compile(int32_t argc, char* argv[]) {
@@ -187,6 +199,10 @@ void compile(int32_t argc, char* argv[]) {
 }
 
 void interpret(int32_t argc, char* argv[]) {
+    show_stages = args_contains(argc, argv, "--p-stages");
+    show_tokens = args_contains(argc, argv, "--p-tokens");
+    show_ast = args_contains(argc, argv, "--p-ast");
+
     /* Lexer Stage */
     char* filename = argv[2];
     char* lexer_code = NULL;
@@ -196,6 +212,8 @@ void interpret(int32_t argc, char* argv[]) {
     lexer_code[file_size] = 0;
 
 
+
+    if (show_stages) printf("Lexing Tokens...\n");
 
     Lexer lexer = create_lexer();
     load_lexer_code(&lexer, lexer_code, file_size);
@@ -216,11 +234,15 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
+    if (show_tokens) print_tokens(&token_array);
+
 
 
     /* Parser Stage */
+    if (show_stages) printf("\nParsing AST...\n");
+
     Parser parser = create_parser(token_array);
-    Node result = parse_tokens(&parser);
+    Node ast = parse_tokens(&parser);
 
     if (parser.error) {
         printf("%ld:%ld: %s\n", parser.errpos.line + 1, parser.errpos.column + 1, parser_get_error(&parser));
@@ -233,9 +255,15 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
+    if (show_ast) print_ast(&ast);
+
+
+
     /* Semantics Stage */
+    if (show_stages) printf("Processing semantics...\n");
+
     Semantics semantics = create_semantics();
-    process_semantics(&semantics, &result);
+    process_semantics(&semantics, &ast);
 
     if (semantics.error) {
         printf("%s\n", get_semantics_error(&semantics));
@@ -248,11 +276,13 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
-    Interpreter interp = create_interpreter(result);
+    Interpreter interp = create_interpreter(ast);
+
     // Preloading
     scope_declare_var(&interp.scope, "false");
-    scope_declare_var(&interp.scope, "true");
     scope_define_var(&interp.scope, "false", (Value) { .type = VT_UINT8, .value.u8 = 0 });
+
+    scope_declare_var(&interp.scope, "true");
     scope_define_var(&interp.scope, "true", (Value) { .type = VT_UINT8, .value.u8 = 1 });
 
     run_interpreter(&interp);
