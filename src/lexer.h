@@ -32,8 +32,9 @@ typedef struct Lexer {
 
 Lexer create_lexer();
 void free_lexer(Lexer* lexer);
-void add_lexer_error(Lexer* lexer, const char* errmsg);
 void load_lexer_code(Lexer* lexer, const char* code, size_t size);
+/* Adds error to the Lexer's error_list */
+void add_lexer_error(Lexer* lexer, const char* errmsg);
 TokenArray lexer_tokenize(Lexer* lexer);
 
 #endif

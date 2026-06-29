@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "token.h"
 #include <lexer.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -57,6 +58,9 @@ typedef struct NodeArr {
     Node*  nodes;
     size_t count;
     size_t capacity;
+
+    TokenPosition left_pos;
+    TokenPosition right_pos;
 } NodeArr;
 
 NodeArr create_node_arr(size_t size);
@@ -255,6 +259,9 @@ typedef union NodeData {
 typedef struct Node {
     NodeType type;
     NodeData data;
+
+    TokenPosition left_pos;
+    TokenPosition right_pos;
 } Node;
 
 

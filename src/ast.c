@@ -25,11 +25,17 @@ Node parse_literal_term(Parser* parser) {
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
 
+        node.left_pos = token->left_pos;
+        node.right_pos = token->right_pos;
+
         return node;
     } else if (token->type == TT_FLOAT) {
         Node node = (Node) { .type = NT_FLOAT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
+
+        node.left_pos = token->left_pos;
+        node.right_pos = token->right_pos;
 
         return node;
     } else if (token->type == TT_STRING) {
@@ -37,11 +43,17 @@ Node parse_literal_term(Parser* parser) {
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
 
+        node.left_pos = token->left_pos;
+        node.right_pos = token->right_pos;
+
         return node;
     } else if (token->type == TT_IDENTIFIER) {
         Node node = (Node) { .type = NT_IDENT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
+
+        node.left_pos = token->left_pos;
+        node.right_pos = token->right_pos;
 
         return node;
     } else if (token->type == TT_LPAREN) {
@@ -58,7 +70,7 @@ Node parse_literal_term(Parser* parser) {
         return result;
     }
 
-    parser_set_error(parser, "Unexpected token '%c'", token->left_pos);
+    parser_set_error(parser, "Unexpected token", token->left_pos);
     return (Node) { .type = NT_NONE, {} };
 }
 
@@ -69,13 +81,14 @@ Node parse_literal_term(Parser* parser) {
  * [ (expr), (...), ]
  */
 Node parse_array_lit(Parser* parser) {
-    parser_advance(parser); // '['
+    const Token* starting_token = parser_advance(parser); // '['
+    const Token* ending_token = NULL;
 
     NodeArr node_array = create_node_arr(64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACKET) {
-            parser_advance(parser); // ']'
+            ending_token = parser_advance(parser); // ']'
             break;
         }
 
@@ -102,6 +115,8 @@ Node parse_array_lit(Parser* parser) {
         .data.array_lit = (NArrayLit) {
             .values = node_array,
         },
+        .left_pos = starting_token->left_pos,
+        .right_pos = ending_token->right_pos,
     };
 
     return array_node;
@@ -151,6 +166,8 @@ Node parse_assign_expr(Parser* parser) {
             .ident = new_node(&left),
             .value = new_node(&value),
         },
+        .left_pos = left.left_pos,
+        .right_pos = value.right_pos,
     };
 
     return left;
@@ -198,6 +215,8 @@ Node parse_bin_comp_expr(Parser* parser) {
                 .left = new_node(&left),
                 .right = new_node(&right),
             },
+            .left_pos = left.left_pos,
+            .right_pos = right.right_pos,
         };
     }
 
@@ -238,6 +257,8 @@ Node parse_bin_add_expr(Parser* parser) {
                 .left = new_node(&left),
                 .right = new_node(&right),
             },
+            .left_pos = left.left_pos,
+            .right_pos = right.right_pos,
         };
     }
 
@@ -280,6 +301,8 @@ Node parse_bin_mul_expr(Parser* parser) {
                 .left = new_node(&left),
                 .right = new_node(&right),
             },
+            .left_pos = left.left_pos,
+            .right_pos = right.right_pos,
         };
     }
 
@@ -306,18 +329,20 @@ Node parse_unary_expr(Parser* parser) {
     }
     parser_advance(parser); // '-'|'*'|'!'|'&'
 
-    Node left = parse_update_expr(parser);
+    Node expr = parse_update_expr(parser);
     if (parser->error) return (Node) { 0 };
 
-    left = (Node) {
+    expr = (Node) {
         .type = NT_UN_EXPR,
         .data.un_expr = (NUnExpr) {
             .op = token->type,
-            .expr = new_node(&left),
+            .expr = new_node(&expr),
         },
+        .left_pos = token->left_pos,
+        .right_pos = expr.right_pos,
     };
 
-    return left;
+    return expr;
 }
 
 /***
@@ -327,40 +352,40 @@ Node parse_unary_expr(Parser* parser) {
  * (expr)--
  */
 Node parse_update_expr(Parser* parser) {
-    const Token* token = parser_at(parser);
+    const Token* starting_token = parser_at(parser);
 
     Node expr = { 0 };
 
-    if (token->type != TT_INCREMENT && token->type != TT_DECREMENT) {
+    if (starting_token->type != TT_INCREMENT && starting_token->type != TT_DECREMENT) {
         expr = parse_call_expr(parser);
         if (parser->error) return (Node) { 0 };
 
-        // TODO: Fix update expr potentially grabbing unwanted tokens
+        // Ignore that semicolon
         if (expr.type == NT_NONE) {
             return expr;
         }
 
-        token = parser_at(parser);
-
         /* right-hand side operator */
-        if (token->type != TT_INCREMENT && token->type != TT_DECREMENT) {
+        if (parser_at(parser)->type != TT_INCREMENT && parser_at(parser)->type != TT_DECREMENT) {
             return expr;
         }
-        parser_advance(parser); // '++'|'--'
+        const Token* op = parser_advance(parser); // '++'|'--'
 
         expr = (Node) {
             .type = NT_UPDATE_EXPR,
             .data.update_expr = (NUpdateExpr) {
                 .prefixed = false,
-                .op = token->type,
+                .op = op->type,
                 .expr = new_node(&expr),
             },
+            .left_pos = expr.left_pos,
+            .right_pos = op->right_pos,
         };
 
         return expr;
     } else {
         /* left-hand side operator */
-        parser_advance(parser); // '++'|'--'
+        const Token* op = parser_advance(parser); // '++'|'--'
 
         expr = parse_call_expr(parser);
         if (parser->error) return (Node) { 0 };
@@ -369,9 +394,11 @@ Node parse_update_expr(Parser* parser) {
             .type = NT_UPDATE_EXPR,
             .data.update_expr = (NUpdateExpr) {
                 .prefixed = true,
-                .op = token->type,
+                .op = op->type,
                 .expr = new_node(&expr),
             },
+            .left_pos = op->left_pos,
+            .right_pos = expr.right_pos,
         };
     }
 
@@ -405,6 +432,8 @@ Node parse_call_expr(Parser* parser) {
                 .member = new_node(&member),
                 .args = args,
             },
+            .left_pos = member.left_pos,
+            .right_pos = args.right_pos,
         };
     }
 
@@ -430,12 +459,11 @@ Node parse_member_expr(Parser* parser) {
         }
         parser_advance(parser); // '.'
 
-        TokenPosition property_pos = parser_at(parser)->left_pos;
         Node property = parse_literal_term(parser);
         if (parser->error) return (Node) { 0 };
 
         if (property.type != NT_IDENT_LIT) {
-            parser_set_error(parser, "Expected identifier as member property.", property_pos);
+            parser_set_error(parser, "Expected identifier as member property.", property.left_pos);
             return (Node) { 0 };
         }
 
@@ -445,6 +473,8 @@ Node parse_member_expr(Parser* parser) {
                 .object = new_node(&object),
                 .property = new_node(&property),
             },
+            .left_pos = object.left_pos,
+            .right_pos = property.right_pos,
         };
     }
 
@@ -459,7 +489,9 @@ Node parse_member_expr(Parser* parser) {
  * { (ident): (type), (...) }
  */
 NodeArr parse_fields(Parser* parser) {
-    parser_advance_expect(parser, TT_LBRACE, "Field list expected '{'"); // '{'
+    const Token* starting_token = parser_advance_expect(parser, TT_LBRACE, "Field list expected '{'"); // '{'
+    const Token* ending_token = NULL;
+
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
     NodeArr node_array = create_node_arr(64);
@@ -468,14 +500,14 @@ NodeArr parse_fields(Parser* parser) {
         TokenType token_type = parser_at(parser)->type; // ','|'}'
 
         if (token_type == TT_RBRACE) {
-            parser_advance(parser);
+            ending_token = parser_advance(parser);
             break;
         } else if (token_type == TT_COMMA) {
             parser_advance(parser);
 
-            /* [ ..., ..., ] */
+            /* Comma before brace: { ..., ..., } */
             if (parser_at(parser)->type == TT_RBRACE) {
-                parser_advance(parser);
+                ending_token = parser_advance(parser);
                 break;
             }
         }
@@ -495,6 +527,8 @@ NodeArr parse_fields(Parser* parser) {
                 .ident = new_node(&ident),
                 .type = new_node(&type),
             },
+            .left_pos = ident.left_pos,
+            .right_pos = type.right_pos,
         };
 
         add_to_node_arr(&node_array, field_node);
@@ -505,6 +539,9 @@ NodeArr parse_fields(Parser* parser) {
             goto error;
         }
     }
+
+    node_array.left_pos = starting_token->left_pos;
+    node_array.right_pos = ending_token->right_pos;
 
     return node_array;
 
@@ -518,7 +555,8 @@ NodeArr parse_fields(Parser* parser) {
  * ((ident): (type), (...))
  */
 NodeArr parse_parameters(Parser* parser) {
-    parser_advance_expect(parser, TT_LPAREN, "Parameter list expected '('"); // '('
+    const Token* starting_token = parser_advance_expect(parser, TT_LPAREN, "Parameter list expected '('"); // '('
+    const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
     NodeArr node_array = create_node_arr(64);
@@ -527,7 +565,7 @@ NodeArr parse_parameters(Parser* parser) {
         TokenType token_type = parser_at(parser)->type;
 
         if (token_type == TT_RPAREN) {
-            parser_advance(parser); // ')'
+            ending_token = parser_advance(parser); // ')'
             break;
         }
 
@@ -547,6 +585,8 @@ NodeArr parse_parameters(Parser* parser) {
                 .type = new_node(&type),
                 .defval = NULL,
             },
+            .left_pos = ident.left_pos,
+            .right_pos = type.right_pos,
         };
 
         add_to_node_arr(&node_array, param_node);
@@ -562,6 +602,9 @@ NodeArr parse_parameters(Parser* parser) {
         }
     }
 
+    node_array.left_pos = starting_token->left_pos;
+    node_array.right_pos = ending_token->right_pos;
+
     return node_array;
 
     error:
@@ -576,42 +619,37 @@ NodeArr parse_parameters(Parser* parser) {
  * { (ident) = (expr), (...) }
  */
 NodeArr parse_enum_entries(Parser* parser) {
-    parser_advance_expect(parser, TT_LBRACE, "Enum entries list expected '{'"); // '{'
+    const Token* starting_token = parser_advance_expect(parser, TT_LBRACE, "Enum entries list expected '{'"); // '{'
+    const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
     NodeArr node_array = create_node_arr(64);
 
     while (true) {
-        const Token* token = parser_at(parser);
-
-        if (token->type == TT_RBRACE) {
-            parser_advance(parser);
+        if (parser_at(parser)->type == TT_RBRACE) {
+            ending_token = parser_advance(parser);
             break;
-        } else if (token->type == TT_COMMA) {
+        } else if (parser_at(parser)->type == TT_COMMA) {
             parser_advance(parser);
         }
 
-        token = parser_at(parser);
-
-        if (token->type == TT_RBRACE) {
-            parser_advance(parser);
+        /* Comma before brace: { ..., ..., } */
+        if (parser_at(parser)->type == TT_RBRACE) {
+            ending_token = parser_advance(parser);
             break;
         }
 
-        TokenPosition token_pos = parser_at(parser)->left_pos;
         Node ident = parse_literal_term(parser);
         if (parser->error) goto error;
 
         if (ident.type != NT_IDENT_LIT) {
-            parser_set_error(parser, "Expected identifier as Enumeration Entry", token_pos);
+            parser_set_error(parser, "Expected identifier as Enumeration Entry", ident.left_pos);
             goto error;
         }
 
         Node value = (Node) { 0 };
 
-        token = parser_at(parser);
-
-        if (token->type == TT_EQUAL) {
+        if (parser_at(parser)->type == TT_EQUAL) {
             parser_advance(parser); // '='
 
             value = parse_expr(parser);
@@ -624,17 +662,22 @@ NodeArr parse_enum_entries(Parser* parser) {
                 .ident = new_node(&ident),
                 .value = new_node(&value),
             },
+            .left_pos = ident.left_pos,
+            .right_pos = value.type == NT_NONE ? ident.right_pos : value.right_pos,
         };
 
         add_to_node_arr(&node_array, entry_node);
 
-        token = parser_at(parser);
+        const Token* token = parser_at(parser);
 
         if (token->type != TT_RBRACE && token->type != TT_COMMA) {
             parser_set_error(parser, "Expected ',' or '}'", token->left_pos);
             goto error;
         }
     }
+
+    node_array.left_pos = starting_token->left_pos;
+    node_array.right_pos = ending_token->right_pos;
 
     return node_array;
 
@@ -648,7 +691,8 @@ NodeArr parse_enum_entries(Parser* parser) {
  * ((expr), (expr), (...))
  */
 NodeArr parse_args(Parser* parser) {
-    parser_advance_expect(parser, TT_LPAREN, "Parameter list expected '('"); // '('
+    const Token* starting_token = parser_advance_expect(parser, TT_LPAREN, "Parameter list expected '('"); // '('
+    const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
     NodeArr node_array = create_node_arr(64);
@@ -658,7 +702,7 @@ NodeArr parse_args(Parser* parser) {
         TokenType token_type = token->type;
 
         if (token_type == TT_RPAREN) {
-            parser_advance(parser);
+            ending_token = parser_advance(parser);
             break;
         } else if (token_type == TT_COMMA) {
             parser_advance(parser);
@@ -673,6 +717,8 @@ NodeArr parse_args(Parser* parser) {
                 .expr = new_node(&expr),
                 .ident = NULL,
             },
+            .left_pos = expr.left_pos,
+            .right_pos = expr.right_pos,
         };
 
         add_to_node_arr(&node_array, arg_node);
@@ -686,6 +732,9 @@ NodeArr parse_args(Parser* parser) {
         }
     }
 
+    node_array.left_pos = starting_token->left_pos;
+    node_array.right_pos = ending_token->right_pos;
+
     return node_array;
 
     error:
@@ -697,13 +746,14 @@ NodeArr parse_args(Parser* parser) {
  * { (...) }
  */
 Node parse_block(Parser* parser) {
-    parser_advance(parser); // '{'
+    const Token* starting_token = parser_advance(parser); // '{'
+    const Token* ending_token = NULL;
 
     NodeArr node_array = create_node_arr(64);
 
     while (parser->cursor < parser->tokens.count) {
         if (parser_at(parser)->type == TT_RBRACE) {
-            parser_advance(parser); // '}'
+            ending_token = parser_advance(parser); // '}'
             break;
         }
 
@@ -715,6 +765,13 @@ Node parse_block(Parser* parser) {
             continue;
         }
 
+        // Setting node_array's position range
+        if (node_array.count == 0) {
+            node_array.left_pos = node.left_pos;
+        } else {
+            node_array.right_pos = node.right_pos;
+        }
+
         add_to_node_arr(&node_array, node);
     }
 
@@ -723,6 +780,8 @@ Node parse_block(Parser* parser) {
         .data.block = (NBlock) {
             .nodes = node_array,
         },
+        .left_pos = starting_token->left_pos,
+        .right_pos = ending_token->right_pos,
     };
 
     return result;
@@ -751,24 +810,19 @@ Node parse_type(Parser* parser) {
  * (...)[(expr)][(expr)](expr)
  */
 Node parse_array_type(Parser* parser) {
-    const Token* token = NULL;
+    const Token* starting_token = NULL;
 
     Node number = (Node) { 0 };
     Node type = (Node) { 0 };
 
-    // TODO: Remove while loop
+    // Poorly structured I think
     while (true) {
-        token = parser_at(parser);
-
-        if (token->type == TT_LBRACKET) {
-            parser_advance(parser); // '['
+        if (parser_at(parser)->type == TT_LBRACKET) {
+            starting_token = parser_advance(parser); // '['
         }
 
-        token = parser_at(parser);
-
-
         // ArrayType without size
-        if (token->type == TT_RBRACKET) {
+        if (parser_at(parser)->type == TT_RBRACKET) {
             parser_advance(parser); // ']'
 
             // [](expr)
@@ -782,10 +836,8 @@ Node parse_array_type(Parser* parser) {
         number = parse_expr(parser);
         if (parser->error) return (Node) { 0 };
 
-        token = parser_at(parser);
-
         // Array type with size
-        if (token->type == TT_RBRACKET) {
+        if (parser_at(parser)->type == TT_RBRACKET) {
             parser_advance(parser); // ']'
 
             // [](expr)
@@ -802,6 +854,8 @@ Node parse_array_type(Parser* parser) {
             .number = new_node(&number),
             .type = new_node(&type),
         },
+        .left_pos = starting_token->left_pos,
+        .right_pos = type.right_pos,
     };
 
     return result;
@@ -827,7 +881,8 @@ Node parse_if_else(Parser* parser) {
 }
 
 NodeArr parse_switch_block(Parser* parser) {
-    parser_advance(parser); // '{'
+    const Token* starting_token = parser_advance(parser); // '{'
+    const Token* ending_token = NULL;
 
     NodeArr node_array = create_node_arr(64);
 
@@ -837,10 +892,10 @@ NodeArr parse_switch_block(Parser* parser) {
         const Token* token = parser_at(parser);
 
         if (token->type == TT_RBRACE) {
-            parser_advance(parser); // '}'
+            ending_token = parser_advance(parser); // '}'
             break;
         } else if (token->type == TT_CASE) {
-            parser_advance(parser); // 'case'
+            const Token* case_token = parser_advance(parser); // 'case'
 
             Node expr = parse_expr(parser);
             if (parser->error) goto error;
@@ -857,14 +912,16 @@ NodeArr parse_switch_block(Parser* parser) {
                     .condition = new_node(&expr),
                     .body = new_node(&block),
                 },
+                .left_pos = case_token->left_pos,
+                .right_pos = block.right_pos,
             };
 
             add_to_node_arr(&node_array, switch_case);
         } else if (token->type == TT_DEFAULT) {
-            token = parser_advance(parser); // 'default'
+            const Token* default_token = parser_advance(parser); // 'default'
 
             if (has_default) {
-                parser_set_error(parser, "Multiple default cases in one switch statement", token->left_pos);
+                parser_set_error(parser, "Multiple default cases in one switch statement", default_token->left_pos);
                 goto error;
             }
             has_default = true;
@@ -881,11 +938,16 @@ NodeArr parse_switch_block(Parser* parser) {
                     .condition = NULL,
                     .body = new_node(&block),
                 },
+                .left_pos = default_token->left_pos,
+                .right_pos = block.right_pos,
             };
 
             add_to_node_arr(&node_array, switch_case);
         }
     }
+
+    node_array.left_pos = starting_token->left_pos;
+    node_array.right_pos = ending_token->right_pos;
 
     return node_array;
 
@@ -919,17 +981,23 @@ Node parse_stat(Parser* parser) {
     } else if (token->type == TT_RETURN) {
         return parse_return_stat(parser);
     } else if (token->type == TT_BREAK) {
-        parser_advance(parser); // 'break'
+        const Token* break_token = parser_advance(parser); // 'break'
 
-        Node node = (Node) { .type = NT_BREAK_STAT, {} };
-
-        return node;
+        return (Node) {
+            .type = NT_BREAK_STAT,
+            .data = {},
+            .left_pos = break_token->left_pos,
+            .right_pos = break_token->right_pos
+        };
     } else if (token->type == TT_CONTINUE) {
-        parser_advance(parser); // 'continue'
+        const Token* continue_token = parser_advance(parser); // 'continue'
 
-        Node node = (Node) { .type = NT_CONTINUE_STAT, {} };
-
-        return node;
+        return (Node) {
+            .type = NT_CONTINUE_STAT,
+            .data = {},
+            .left_pos = continue_token->left_pos,
+            .right_pos = continue_token->right_pos
+        };
     } else if (token->type == TT_LBRACE) {
         return parse_block(parser);
     }
@@ -942,20 +1010,19 @@ Node parse_stat(Parser* parser) {
  * return (value);
  */
 Node parse_return_stat(Parser* parser) {
-    parser_advance(parser); // `return`
+    const Token* return_token = parser_advance(parser); // `return`
 
+    // If the next token is a semicolon, the return value is NONE
     Node value = parse_expr(parser);
     if (parser->error) return (Node) { 0 };
-
-    if (value.type == NT_NONE) {
-        // Do nothing
-    }
 
     Node result = (Node) {
         .type = NT_RETURN_STAT,
         .data.ret_stat = (NRetStat) {
             .expr = value.type == NT_NONE ? NULL : new_node(&value),
         },
+        .left_pos = return_token->left_pos,
+        .right_pos = value.type == NT_NONE ? return_token->right_pos : value.right_pos,
     };
 
     return result;
@@ -966,19 +1033,18 @@ Node parse_return_stat(Parser* parser) {
  * var|const (indent): (type) = (value);
  */
 Node parse_var_stat(Parser* parser) {
-    TokenType token_type = parser_advance(parser)->type; // 'var'|'const'
-    bool is_const = token_type == TT_CONST;
+    const Token* var_token = parser_advance(parser); // 'var'|'const'
+    bool is_const = var_token->type == TT_CONST;
 
     Node ident = { 0 };
     Node type = { 0 };
     Node value = { 0 };
 
-    TokenPosition token_pos = parser_at(parser)->left_pos;
     ident = parse_literal_term(parser);
     if (parser->error) return (Node) { 0 };
 
     if (ident.type != NT_IDENT_LIT) {
-        parser_set_error(parser, "Expected identifier for variable statement name", token_pos);
+        parser_set_error(parser, "Expected identifier for variable statement name", ident.left_pos);
         return (Node) { 0 };
     }
 
@@ -1003,6 +1069,8 @@ Node parse_var_stat(Parser* parser) {
             .type = new_node(&type),
             .value = value.type == NT_NONE ? NULL : new_node(&value),
         },
+        .left_pos = var_token->left_pos,
+        .right_pos = value.type == NT_NONE ? type.right_pos : value.right_pos,
     };
 
     return result;
@@ -1013,24 +1081,20 @@ Node parse_var_stat(Parser* parser) {
  * enum (ident) { (enum entries) }
  */
 Node parse_enum_stat(Parser* parser) {
-    parser_advance(parser); // 'enum'
+    const Token* starting_token = parser_advance(parser); // 'enum'
 
-    TokenPosition token_pos = parser_at(parser)->left_pos;
-
-    // Avoid conflict with call expr
+    // Avoid conflict with call expr by using term instead of expr
     Node ident = parse_literal_term(parser);
     if (parser->error) return (Node) { 0 };
 
     if (ident.type != NT_IDENT_LIT) {
-        parser_set_error(parser, "Expected identifier as struct name", token_pos);
+        parser_set_error(parser, "Expected identifier as struct name", ident.left_pos);
         return (Node) { 0 };
     }
 
     NodeArr entries = { 0 };
 
-    TokenType token_type = parser_at(parser)->type;
-
-    if (token_type == TT_LBRACE) {
+    if (parser_at(parser)->type == TT_LBRACE) {
         entries = parse_enum_entries(parser);
         if (parser->error) return (Node) { 0 };
     }
@@ -1041,6 +1105,10 @@ Node parse_enum_stat(Parser* parser) {
             .ident = new_node(&ident),
             .entries = entries,
         },
+        .left_pos = starting_token->left_pos,
+        // NOTE: The right_pos point can be wrong with `enum (ident) { (empty) }`
+        //       compared to `enum (ident)` or `enum (ident) { (not empty) }`
+        .right_pos = entries.count == 0 ? ident.right_pos : entries.right_pos,
     };
 
     return enum_node;
@@ -1051,24 +1119,20 @@ Node parse_enum_stat(Parser* parser) {
  * struct (ident) (fields)
  */
 Node parse_struct_stat(Parser* parser) {
-    parser_advance(parser); // `struct`
+    const Token* starting_token = parser_advance(parser); // `struct`
 
-    TokenPosition token_pos = parser_at(parser)->left_pos;
-
-    // Avoid conflict with call expr
+    // Avoid conflict with call expr by using term instead of expr
     Node ident = parse_literal_term(parser);
     if (parser->error) return (Node) { 0 };
 
     if (ident.type != NT_IDENT_LIT) {
-        parser_set_error(parser, "Expected identifier as struct name", token_pos);
+        parser_set_error(parser, "Expected identifier as struct name", ident.left_pos);
         return (Node) { 0 };
     }
 
     NodeArr fields = { 0 };
 
-    TokenType token_type = parser_at(parser)->type;
-
-    if (token_type == TT_LBRACE) {
+    if (parser_at(parser)->type == TT_LBRACE) {
         fields = parse_fields(parser);
         if (parser->error) return (Node) { 0 };
     }
@@ -1079,6 +1143,10 @@ Node parse_struct_stat(Parser* parser) {
             .ident = new_node(&ident),
             .fields = fields,
         },
+        .left_pos = starting_token->left_pos,
+        // NOTE: The right_pos point can be wrong with `struct (ident) { (empty) }`
+        //       compared to `struct (ident)` or `struct (ident) { (not empty) }`
+        .right_pos = fields.count == 0 ? ident.right_pos : fields.right_pos,
     };
 
     return result;
@@ -1088,16 +1156,14 @@ Node parse_struct_stat(Parser* parser) {
  * fn (ident) (params): (type) (block)
  */
 Node parse_fn_stat(Parser* parser) {
-    parser_advance(parser); // 'fn'
+    const Token* fn_token = parser_advance(parser); // 'fn'
 
-    TokenPosition token_pos = parser_at(parser)->left_pos;
-
-    // Avoid conflict with call expr
+    // Avoid conflict with call expr by using term instead of expr
     Node ident = parse_literal_term(parser);
     if (parser->error) return (Node) { 0 };
 
     if (ident.type != NT_IDENT_LIT) {
-        parser_set_error(parser, "Expected identifier as function name", token_pos);
+        parser_set_error(parser, "Expected identifier as function name", ident.left_pos);
         return (Node) { 0 };
     }
 
@@ -1124,6 +1190,8 @@ Node parse_fn_stat(Parser* parser) {
             .type = new_node(&type),
             .body = new_node(&block),
         },
+        .left_pos = fn_token->left_pos,
+        .right_pos = block.right_pos,
     };
 
     return result;
@@ -1133,9 +1201,7 @@ Node parse_fn_stat(Parser* parser) {
  * if (expr) (block)
  */
 Node parse_if_stat(Parser* parser) {
-    const Token* token = NULL;
-
-    parser_advance(parser); // `if`
+    const Token* if_token = parser_advance(parser); // `if`
 
     parser_advance_expect(parser, TT_LPAREN, "The expression in if statement must be closed in parentheses ('(')"); // `(`
     if (parser->error) return (Node) { 0 };
@@ -1150,26 +1216,22 @@ Node parse_if_stat(Parser* parser) {
     if (parser->error) return (Node) { 0 };
 
     /* ---------------- */
-    Node block = (Node) { 0 };
-    token = parser_at(parser);
+    Node body = (Node) { 0 };
 
-    if (token->type == TT_LBRACE) {
-        block = parse_block(parser);
+    if (parser_at(parser)->type == TT_LBRACE) {
+        body = parse_block(parser);
     } else {
-        block = parse_expr(parser);
+        body = parse_expr(parser);
     }
 
     if (parser->error) return (Node) { 0 };
     /* ---------------- */
 
     /* ---------------- */
-    Node ifelse = (Node) { 0 };
-    token = parser_at(parser);
+    Node alternate = (Node) { 0 };
 
-    if (token->type == TT_ELSE) {
-        // parser_advance(parser); // `else`
-
-        ifelse = parse_if_else(parser);
+    if (parser_at(parser)->type == TT_ELSE) {
+        alternate = parse_if_else(parser);
         if (parser->error) return (Node) { 0 };
     }
     /* ---------------- */
@@ -1178,9 +1240,11 @@ Node parse_if_stat(Parser* parser) {
         .type = NT_IF_STAT,
         .data.if_stat = (NIfStat) {
             .condition = new_node(&expr),
-            .body = new_node(&block),
-            .alternate = ifelse.type == NT_NONE ? NULL : new_node(&ifelse),
-        }
+            .body = new_node(&body),
+            .alternate = alternate.type == NT_NONE ? NULL : new_node(&alternate),
+        },
+        .left_pos = if_token->left_pos,
+        .right_pos = alternate.type == NT_NONE ? body.right_pos : alternate.right_pos,
     };
 
     return result;
@@ -1190,7 +1254,7 @@ Node parse_if_stat(Parser* parser) {
  * while (expr) (block)
  */
 Node parse_while_stat(Parser* parser) {
-    parser_advance(parser); // `while`
+    const Token* while_token = parser_advance(parser); // `while`
 
     parser_advance_expect(parser, TT_LPAREN, "The expression in while statement must be closed in parentheses ('(')"); // `(`
     if (parser->error) return (Node) { 0 };
@@ -1202,13 +1266,13 @@ Node parse_while_stat(Parser* parser) {
     if (parser->error) return (Node) { 0 };
 
     /* ---------------- */
-    Node block = (Node) { 0 };
+    Node body = (Node) { 0 };
     const Token* token = parser_at(parser);
 
     if (token->type == TT_LBRACE) {
-        block = parse_block(parser);
+        body = parse_block(parser);
     } else {
-        block = parse_expr(parser);
+        body = parse_expr(parser);
     }
 
     if (parser->error) return (Node) { 0 };
@@ -1218,8 +1282,10 @@ Node parse_while_stat(Parser* parser) {
         .type = NT_WHILE_STAT,
         .data.while_stat = (NWhileStat) {
             .condition = new_node(&expr),
-            .body = block.type == NT_NONE ? NULL : new_node(&block),
+            .body = body.type == NT_NONE ? NULL : new_node(&body),
         },
+        .left_pos = while_token->left_pos,
+        .right_pos = body.right_pos,
     };
 
     return result;
@@ -1231,7 +1297,7 @@ Node parse_while_stat(Parser* parser) {
  * switch (expr) { default: (block) }
  */
 Node parse_switch_stat(Parser* parser) {
-    parser_advance(parser); // 'switch'
+    const Token* switch_token = parser_advance(parser); // 'switch'
 
     parser_advance_expect(parser, TT_LPAREN, "Expected '(' in switch statement");
     if (parser->error) return (Node) { 0 };
@@ -1251,6 +1317,8 @@ Node parse_switch_stat(Parser* parser) {
             .lookup = new_node(&lookup),
             .cases = cases,
         },
+        .left_pos = switch_token->left_pos,
+        .right_pos = cases.right_pos,
     };
 
     return switch_node;
