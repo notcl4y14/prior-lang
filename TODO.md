@@ -14,6 +14,10 @@
   - [x] Switch from memory arena to allocation tree to allow AST optimizations
   - [x] Implement positions for nodes
   - [x] Implement casts
+- [ ] Parser
+  - [ ] Create a free system for node tree
+    - Either by following the tree freeing every node
+    - Or by allocating an array that records every AST allocation to free later
 - [ ] Semantics
   - [x] Implement error system
   - [ ] Implement auto-cast
