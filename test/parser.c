@@ -20,6 +20,10 @@ int main(void) {
     // Check for correct node count
     assert(ast.data.program.nodes.count == 2);
 
+    // Check for correct `fn main (): void {}` position range
+    assert(ast.data.program.nodes.nodes[0].left_pos.column == 0);
+    assert(ast.data.program.nodes.nodes[0].right_pos.column == 18);
+
     // Check for correct `foo()` position range
     assert(ast.data.program.nodes.nodes[1].left_pos.column == 19);
     assert(ast.data.program.nodes.nodes[1].right_pos.column == 24);
