@@ -83,6 +83,8 @@ Node parse_call_expr(Parser* parser);
 
 Node parse_member_expr(Parser* parser);
 
+Node parse_cast_expr(Parser* parser);
+
 /***
  * STANDALONE EXPRESSIONS
  * : Expressions that are either kinda also statements
