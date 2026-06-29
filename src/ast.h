@@ -2,7 +2,7 @@
 #define AST_H
 
 #include <assert.h>
-#include <parser.h>
+#include "parser.h"
 #include <stdint.h>
 
 /***

@@ -1,7 +1,7 @@
 #ifndef SEMANTICS_H
 #define SEMANTICS_H
 
-#include <parser.h>
+#include "parser.h"
 
 #define SEMANTICS_ERROR_SIZE 256
 

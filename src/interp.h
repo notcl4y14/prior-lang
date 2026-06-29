@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include <parser.h>
+#include "parser.h"
 #include <value.h>
 
 typedef struct Scope Scope;
