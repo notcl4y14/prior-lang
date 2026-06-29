@@ -179,6 +179,10 @@ ValueType process_call_expr(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
+ValueType process_cast_expr(Semantics* s, Node* node) {
+    return get_value_type_from_string(node->data.cast_expr.type->data.ident_lit.value);
+}
+
 ValueType process_node(Semantics* s, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT:
@@ -231,6 +235,9 @@ ValueType process_node(Semantics* s, Node* node) {
 
         case NT_CALL_EXPR:
             return process_call_expr(s, node);
+
+        case NT_CAST_EXPR:
+            return process_cast_expr(s, node);
 
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);

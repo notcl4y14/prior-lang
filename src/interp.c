@@ -670,6 +670,23 @@ EvalResult evaluate_call_expr(Scope* scope, Node* node) {
     return result;
 }
 
+EvalResult evaluate_cast_expr(Scope* scope, Node* node) {
+    NCastExpr cast_expr = node->data.cast_expr;
+
+    // TODO: Member expr
+    if (cast_expr.type->type == NT_MEMBER_EXPR) {
+        printf("Casts with idents only yet\n");
+        exit(1);
+    }
+
+    ValueType cast_type = get_value_type_from_string(cast_expr.type->data.ident_lit.value);
+
+    Value value = evaluate_node(scope, cast_expr.expr).value;
+    Value result = cast_value(value, cast_type);
+
+    return (EvalResult) { .value = result, .break_type = EBT_NONE };
+}
+
 EvalResult evaluate_node(Scope* scope, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT: {
@@ -738,6 +755,9 @@ EvalResult evaluate_node(Scope* scope, Node* node) {
 
         case NT_CALL_EXPR:
             return evaluate_call_expr(scope, node);
+
+        case NT_CAST_EXPR:
+            return evaluate_cast_expr(scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node->type]);
