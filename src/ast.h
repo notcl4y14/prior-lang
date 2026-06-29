@@ -45,6 +45,7 @@ void print_unary_expr_tree(Node* node, int32_t indent);
 void print_update_expr_tree(Node* node, int32_t indent);
 void print_call_expr_tree(Node* node, int32_t indent);
 void print_member_expr_tree(Node* node, int32_t indent);
+void print_cast_expr_tree(Node* node, int32_t indent);
 
 // Literals
 void print_integer_lit_tree(Node* node, int32_t indent);

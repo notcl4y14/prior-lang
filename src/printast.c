@@ -31,6 +31,7 @@ const PrintNodeTree_Func PrintNodeTree_Funcs[] = {
     [NT_UPDATE_EXPR] = print_update_expr_tree,
     [NT_CALL_EXPR] = print_call_expr_tree,
     [NT_MEMBER_EXPR] = print_member_expr_tree,
+    [NT_CAST_EXPR] = print_cast_expr_tree,
 
     [NT_INTEGER_LIT] = print_integer_lit_tree,
     [NT_FLOAT_LIT] = print_float_lit_tree,
@@ -283,6 +284,16 @@ void print_member_expr_tree(Node* node, int32_t indent) {
 
     print_node_tree(member_expr.object, indent + 1);
     print_node_tree(member_expr.property, indent + 1);
+}
+
+void print_cast_expr_tree(Node* node, int32_t indent) {
+    NCastExpr cast_expr = node->data.cast_expr;
+
+    print_indent(indent);
+    printf("CastExpr:\n");
+
+    print_node_tree(cast_expr.type, indent + 1);
+    print_node_tree(cast_expr.expr, indent + 1);
 }
 
 

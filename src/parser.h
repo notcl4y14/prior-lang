@@ -34,6 +34,7 @@ typedef enum NodeType {
     NT_ASSIGN_EXPR,
     NT_CALL_EXPR,
     NT_MEMBER_EXPR,
+    NT_CAST_EXPR,
 
     NT_BLOCK,
     NT_PARAMETER,
@@ -219,6 +220,11 @@ typedef struct NMemberExpr {
     Node* property;
 } NMemberExpr;
 
+typedef struct NCastExpr {
+    Node* type;
+    Node* expr;
+} NCastExpr;
+
 /***
  * NODE
  */
@@ -254,6 +260,7 @@ typedef union NodeData {
     NUpdateExpr update_expr;
     NCallExpr   call_expr;
     NMemberExpr member_expr;
+    NCastExpr   cast_expr;
 } NodeData;
 
 typedef struct Node {

@@ -57,6 +57,10 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_LPAREN) {
+        /***
+         * This is the literal term expression I was talking about
+         * in parse_cast_expr.
+         */
         Node expr = parse_expr(parser);
 
         parser_advance_expect(parser, TT_RPAREN, "Expected ')'");
@@ -445,7 +449,7 @@ Node parse_call_expr(Parser* parser) {
  * (member).(member).(...);
  */
 Node parse_member_expr(Parser* parser) {
-    Node object = parse_literal_term(parser);
+    Node object = parse_cast_expr(parser);
     if (parser->error) return (Node) { 0 };
 
     // Unwanted tokens non-correlative to the syntax
@@ -459,7 +463,7 @@ Node parse_member_expr(Parser* parser) {
         }
         parser_advance(parser); // '.'
 
-        Node property = parse_literal_term(parser);
+        Node property = parse_cast_expr(parser);
         if (parser->error) return (Node) { 0 };
 
         if (property.type != NT_IDENT_LIT) {
@@ -479,6 +483,70 @@ Node parse_member_expr(Parser* parser) {
     }
 
     return object;
+}
+
+/***
+ * (<type>) <expr>
+ */
+Node parse_cast_expr(Parser* parser) {
+    /***
+     * Parsing cast expression is one of the most seemingly-problematic
+     * nodes I've ever encountered. Since it's easy to confuse its pattern
+     * with something else's pattern you can create a mismatch and execute
+     * the wrong node parsing. An easy solution would be to discard pattern
+     * `(<type>) <expr>` and replace it with something like `cast(<type>) <expr>`
+     * (less ambiguity, but can be confused with call expr if `cast` is not handled
+     * as a keyword)
+     * or `<expr> as <type>`, or even just use something like `<expr>.cast(<type>)`
+     * and call it a day. But I don't really like those, except for the last one.
+     */
+    const Token* starting_token = parser_at(parser);
+
+    if (starting_token->type != TT_LPAREN) {
+        return parse_literal_term(parser);
+    }
+    parser_advance(parser); // '('
+
+    Node type = parse_expr(parser);
+    if (parser->error) return (Node) { 0 };
+
+    parser_advance_expect(parser, TT_RPAREN, "Expected ')'");
+    if (parser->error) return (Node) { 0 };
+
+    /***
+     * It's not our cast expression, because the cast expression
+     * type is either a member expression, an array type expression or
+     * an identifier literal.
+     * Also fun fact: This expression function probably discards
+     * literal term expressions surrounded by parentheses now, since
+     * its pattern (<expr>) matches with literal term expression's (<expr>)
+     * pattern.
+     */
+    if (type.type != NT_MEMBER_EXPR && type.type != NT_ARRAY_TYPE && type.type != NT_IDENT_LIT) {
+        return type;
+    }
+
+    Node expr = parse_expr(parser);
+    if (parser->error) return (Node) { 0 };
+
+    /***
+     * Semicolon. Not our cast expression then.
+     */
+    if (expr.type == NT_NONE) {
+        return type;
+    }
+
+    Node result = (Node) {
+        .type = NT_CAST_EXPR,
+        .data.cast_expr = (NCastExpr) {
+            .type = new_node(&type),
+            .expr = new_node(&expr),
+        },
+        .left_pos = starting_token->left_pos,
+        .right_pos = expr.right_pos,
+    };
+
+    return result;
 }
 
 

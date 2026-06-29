@@ -30,6 +30,7 @@ const char* NodeTypeNames[] = {
     [NT_ASSIGN_EXPR] = "AssignExpr",
     [NT_CALL_EXPR]   = "CallExpr",
     [NT_MEMBER_EXPR] = "MemberExpr",
+    [NT_CAST_EXPR]   = "CastExpr",
 
     [NT_BLOCK]       = "Block",
     [NT_PARAMETER]   = "Parameter",

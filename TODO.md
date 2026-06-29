@@ -2,7 +2,7 @@
 
 - [x] Lexer
   - [x] Implement errors
-- [ ] AST
+- [x] AST
   - [x] Implement `else if` and `else`
   - [x] Make `if`, `while` statements use Expression instead of just Block
   - [x] Array type expression `[]type`
@@ -13,7 +13,7 @@
   - [x] Implement enum
   - [x] Switch from memory arena to allocation tree to allow AST optimizations
   - [x] Implement positions for nodes
-  - [ ] Implement casts
+  - [x] Implement casts
 - [ ] Semantics
   - [x] Implement error system
   - [ ] Implement auto-cast

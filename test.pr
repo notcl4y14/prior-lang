@@ -1,7 +1,7 @@
-fn add(x: i32, y: i32): i32 {
-    return x + y;
+fn add(x: i64, y: i64): i64 {
+    return (x + y);
 }
 
 fn main(): i32 {
-    return add(10, 20);
+    return (i32) add((10), (20));
 }
