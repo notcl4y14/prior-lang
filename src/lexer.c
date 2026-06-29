@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <lexer.h>
 
 const char* TokenTypeNames[] = {
@@ -123,37 +124,6 @@ void print_token_array(const TokenArray* token_array) {
     }
 }
 
-bool is_char_whitespace(char c) {
-    switch (c) {
-        case ' ':
-        case '\r':
-        case '\n':
-        case '\t':
-            return true;
-    }
-
-    return false;
-}
-
-bool is_char_digit(char c) {
-    // TODO: make a simple (x > y && x < z) check for digits if needed
-    switch (c) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return true;
-    }
-
-    return false;
-}
-
 bool is_char_operator(char c) {
     switch (c) {
         case '+':
@@ -204,13 +174,19 @@ bool is_char_symbol(char c) {
     return false;
 }
 
-char lexer_at(const Lexer* lexer, int32_t delta) {
-    // TODO: fix this
-    if ((int32_t) lexer->cursor + delta < 0) {
-        printf("Tried to access lexer code out of bounds.\n");
+/**
+ * Returns 0 ('\0') when out of bounds. Would hard error for positive delta and soft error for negative delta, so check return value.
+ */
+static char lexer_at(Lexer* const lexer, int64_t delta) {
+    int64_t actual = (int64_t)lexer->cursor + delta;
+    if (actual < 0) {
+        /* This doesn't need to be a hard error (see lexer_step for example) but you have to check the value only if necessary! */
         return '\0';
     }
-
+    if (actual >= lexer->code_size) {
+        add_lexer_error(lexer, "Internal error: Lexer::lexer_at: out of bounds access!");
+        return '\0';
+    }
     return lexer->code[lexer->cursor + delta];
 }
 
@@ -244,7 +220,7 @@ Token lexer_tokenize_number(Lexer* lexer) {
     while (lexer->cursor < lexer->code_size) {
         char current_char = lexer_step(lexer);
 
-        if (is_char_digit(current_char)) {
+        if (isdigit(current_char)) {
             strbuf[strbuf_c++] = current_char;
         } else if (current_char == '.') {
             if (has_dot) {
@@ -366,7 +342,7 @@ Token lexer_tokenize_ident(Lexer* lexer) {
     while (lexer->cursor < lexer->code_size) {
         char current_char = lexer_at(lexer, 0);
 
-        if (is_char_ident_symbol(current_char) || is_char_digit(current_char)) {
+        if (is_char_ident_symbol(current_char) || isdigit(current_char)) {
             strbuf[strbuf_c++] = current_char;
         } else {
             break;
@@ -532,10 +508,10 @@ TokenArray lexer_tokenize(Lexer* lexer) {
     while (lexer->cursor < lexer->code_size) {
         char current_char = lexer_at(lexer, 0);
 
-        if (is_char_whitespace(current_char)) {
+        if (isspace(current_char)) {
             /* Do nothing */
             lexer_step(lexer);
-        } else if (is_char_digit(current_char)) {
+        } else if (isdigit(current_char)) {
             push_token_array(&token_array, lexer_tokenize_number(lexer));
         } else if (is_char_operator(current_char)) {
             push_token_array(&token_array, lexer_tokenize_operator(lexer));
