@@ -1,8 +1,7 @@
 ## TODO:
 
-- [ ] Lexer
+- [x] Lexer
   - [x] Implement errors
-  - [ ] Fix that TODO with out-of-bounds access
 - [ ] AST
   - [x] Implement `else if` and `else`
   - [x] Make `if`, `while` statements use Expression instead of just Block
@@ -15,13 +14,12 @@
   - [x] Switch from memory arena to allocation tree to allow AST optimizations
   - [x] Implement positions for nodes
   - [ ] Implement casts
-  - [ ] Combine Update Expression with Unary Expression if needed
 - [ ] Semantics
   - [x] Implement error system
   - [ ] Implement auto-cast
   - [ ] Custom types
   - [ ] Scoping
-  - [ ] Let the semantics system declare global variables instead of the interpreter
+  - [ ] Let the semantics system declare global variables and declarations instead of the interpreter
 - [ ] Interpterer
   - [ ] Implement error system
   - [ ] Handle errors
