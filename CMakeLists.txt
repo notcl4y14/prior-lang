@@ -34,6 +34,10 @@ add_executable(test_main EXCLUDE_FROM_ALL test/main.c)
 target_link_libraries(test_main PRIVATE prior_core)
 add_test(NAME main_test COMMAND test_main)
 
+add_executable(test_parser EXCLUDE_FROM_ALL test/parser.c)
+target_link_libraries(test_parser PRIVATE prior_core)
+add_test(NAME parser_test COMMAND test_parser)
+
 add_custom_target(build_tests
-    DEPENDS test_lexer test_main
+    DEPENDS test_lexer test_main test_parser
 )
