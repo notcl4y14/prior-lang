@@ -1,9 +1,11 @@
 #include <interp.h>
 #include <value.h>
 #include <ast.h>
-#include <parser.h>
+#include "parser.h"
+#include "error.h"
 #include <lexer.h>
 #include <semantics.h>
+#include "utils.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -36,33 +38,6 @@ bool args_contains(int32_t argc, char* argv[], const char* arg) {
     }
 
     return false;
-}
-
-void read_file(const char* filename, char** output, size_t* filesize) {
-    /* Open file */
-    FILE* file = fopen(filename, "r");
-
-    if (file == NULL) {
-        printf("Failed to load file \"%s\"\n", filename);
-        return;
-    }
-
-    /* Get file size */
-    fseek(file, 0, SEEK_END);
-    *filesize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    /* Allocating output */
-    *output = malloc(*filesize + 1);
-
-    /* Reading into output */
-    fread(*output, sizeof(uint8_t), *filesize, file);
-
-    /* Adding a null terminator */
-    // *output[*filesize] = '\0';
-
-    /* Close file */
-    fclose(file);
 }
 
 void usage() {
