@@ -2,6 +2,16 @@ fn add(x: i64, y: i64): i64 {
     return (x + y);
 }
 
+// agugu
+// abakaer // doo doo
 fn main(): i32 {
-    return (i8) add((900), (20));
+/*
+ laidosponoto
+ tubalamus
+ */
+    /***
+      * I am a multiline
+      * comment too.
+      */
+    return (u8) add((900), 10/*, (20)*/);
 }

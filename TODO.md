@@ -2,10 +2,10 @@
 
 - [x] Lexer
   - [x] Implement errors
-- [ ] Tokens
-  - [ ] Single-line comments
-  - [ ] Multi-line comments
-- [ ] AST
+- [x] Tokens
+  - [x] Single-line comments
+  - [x] Multi-line comments
+- [x] AST
   - [x] Implement `else if` and `else`
   - [x] Make `if`, `while` statements use Expression instead of just Block
   - [x] Array type expression `[]type`
@@ -17,7 +17,7 @@
   - [x] Switch from memory arena to allocation tree to allow AST optimizations
   - [x] Implement positions for nodes
   - [x] Implement casts
-  - [ ] Implement comments
+  - [x] Implement comments (Kinda not)
 - [ ] Parser
   - [ ] Create a free system for node tree
     - Either by following the tree freeing every node

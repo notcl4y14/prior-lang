@@ -249,6 +249,41 @@ Token lexer_tokenize_number(Lexer* lexer) {
     return token;
 }
 
+Token lexer_tokenize_single_line_comment(Lexer* lexer) {
+    lexer_step(lexer); // '//'
+
+    while (lexer->cursor < lexer->code_size) {
+        char current_char = lexer_step(lexer);
+
+        if (current_char == '\n') {
+            break;
+        }
+    }
+
+    return (Token) { 0 };
+}
+
+Token lexer_tokenize_multi_line_comment(Lexer* lexer) {
+    lexer_step(lexer); // '/*'
+
+    while (lexer->cursor < lexer->code_size) {
+        char char1 = lexer_at(lexer, 0);
+        char char2 = lexer_at(lexer, 1);
+
+        if (char1 == '*' && char2 == '/') {
+            break;
+        }
+
+        lexer_step(lexer);
+    }
+
+    // '*/'
+    lexer_step(lexer);
+    lexer_step(lexer);
+
+    return (Token) { 0 };
+}
+
 Token lexer_tokenize_operator(Lexer* lexer) {
     TokenPosition left_pos = lexer->position;
 
@@ -272,6 +307,8 @@ Token lexer_tokenize_operator(Lexer* lexer) {
         else if (char1 == '>' && char2 == '=') token.type = TT_GREATER_EQUALS;
         else if (char1 == '&' && char2 == '&') token.type = TT_AND;
         else if (char1 == '|' && char2 == '|') token.type = TT_OR;
+        else if (char1 == '/' && char2 == '*') return lexer_tokenize_multi_line_comment(lexer);
+        else if (char1 == '/' && char2 == '/') return lexer_tokenize_single_line_comment(lexer);
 
         // Consuming the second char of the operator
         lexer_step(lexer);
@@ -484,7 +521,12 @@ TokenArray lexer_tokenize(Lexer* lexer) {
         } else if (isdigit(current_char)) {
             push_token_array(&token_array, lexer_tokenize_number(lexer));
         } else if (is_char_operator(current_char)) {
-            push_token_array(&token_array, lexer_tokenize_operator(lexer));
+            Token token = lexer_tokenize_operator(lexer);
+
+            // If the token type is 0, it's a comment, so we ignore it
+            if (token.type != TT_EOF) {
+                push_token_array(&token_array, token);
+            }
         } else if (current_char == '"') {
             push_token_array(&token_array, lexer_tokenize_string(lexer));
         } else if (is_char_ident_symbol(current_char)) {
