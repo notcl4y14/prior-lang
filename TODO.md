@@ -34,7 +34,7 @@
     - [ ] Division by 0
     - [ ] Variable definition
     - [ ] Function Arguments and Parameters
-  - [ ] Isolate function call scope to the global state
+  - [x] Isolate function call scope to the global state
     - The function you're calling should not see your local variables
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
