@@ -68,14 +68,14 @@ Value scope_get_var(Scope* scope, char* name) {
 
 
 
-EvalResult evaluate_node(Scope* scope, Node* node);
+EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node);
 
-EvalResult evaluate_return_stat(Scope* scope, Node* node) {
+EvalResult evaluate_return_stat(Interpreter* interp, Scope* scope, Node* node) {
     NRetStat ret_stat = node->data.ret_stat;
     Value value = (Value) { 0 };
 
     if (ret_stat.expr->type != NT_NONE) {
-        value = evaluate_node(scope, ret_stat.expr).value;
+        value = evaluate_node(interp, scope, ret_stat.expr).value;
         // value = cast_value(value, data->return_type);
     }
 
@@ -85,21 +85,21 @@ EvalResult evaluate_return_stat(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_break_stat(Scope* scope, Node* node) {
+EvalResult evaluate_break_stat(Interpreter* interp, Scope* scope, Node* node) {
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_BREAK,
     };
 }
 
-EvalResult evaluate_continue_stat(Scope* scope, Node* node) {
+EvalResult evaluate_continue_stat(Interpreter* interp, Scope* scope, Node* node) {
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_CONTINUE,
     };
 }
 
-EvalResult evaluate_var_stat(Scope* scope, Node* node) {
+EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
     char* name = var_stat.ident->data.ident_lit.value;
@@ -107,7 +107,7 @@ EvalResult evaluate_var_stat(Scope* scope, Node* node) {
     scope_declare_var(scope, name);
 
     if (var_stat.value->type != NT_NONE) {
-        Value value = evaluate_node(scope, var_stat.value).value;
+        Value value = evaluate_node(interp, scope, var_stat.value).value;
         // value = cast_value(value, var_stat.return_type);
 
         scope_define_var(scope, name, value);
@@ -119,7 +119,7 @@ EvalResult evaluate_var_stat(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_fn_stat(Scope* scope, Node* node) {
+EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
     NFuncStat func_stat = node->data.func_stat;
 
     char* name = func_stat.ident->data.ident_lit.value;
@@ -161,16 +161,16 @@ EvalResult evaluate_fn_stat(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_if_stat(Scope* scope, Node* node) {
+EvalResult evaluate_if_stat(Interpreter* interp, Scope* scope, Node* node) {
     NIfStat if_stat = node->data.if_stat;
 
-    Value condition = evaluate_node(scope, if_stat.condition).value;
+    Value condition = evaluate_node(interp, scope, if_stat.condition).value;
 
     if (condition.value.u8 == 1) {
-        return evaluate_node(scope, if_stat.body);
+        return evaluate_node(interp, scope, if_stat.body);
     } else {
         if (if_stat.alternate != NULL) {
-            return evaluate_node(scope, if_stat.alternate);
+            return evaluate_node(interp, scope, if_stat.alternate);
         }
     }
 
@@ -180,14 +180,14 @@ EvalResult evaluate_if_stat(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_while_stat(Scope* scope, Node* node) {
+EvalResult evaluate_while_stat(Interpreter* interp, Scope* scope, Node* node) {
     NWhileStat while_stat = node->data.while_stat;
 
     EvalResult last_result = (EvalResult) { 0 };
-    Value condition = evaluate_node(scope, while_stat.condition).value;
+    Value condition = evaluate_node(interp, scope, while_stat.condition).value;
 
     while (condition.value.u8 == 1) {
-        EvalResult next_result = evaluate_node(scope, while_stat.body);
+        EvalResult next_result = evaluate_node(interp, scope, while_stat.body);
 
         if (next_result.break_type == EBT_RETURN) {
             last_result = next_result;
@@ -195,12 +195,12 @@ EvalResult evaluate_while_stat(Scope* scope, Node* node) {
         } else if (next_result.break_type == EBT_BREAK) {
             break;
         } else if (next_result.break_type == EBT_CONTINUE) {
-            condition = evaluate_node(scope, while_stat.condition).value;
+            condition = evaluate_node(interp, scope, while_stat.condition).value;
             continue;
         }
 
         last_result = next_result;
-        condition = evaluate_node(scope, while_stat.condition).value;
+        condition = evaluate_node(interp, scope, while_stat.condition).value;
     }
 
     return last_result;
@@ -208,7 +208,7 @@ EvalResult evaluate_while_stat(Scope* scope, Node* node) {
 
 
 
-EvalResult evaluate_block(Scope* scope, Node* node) {
+EvalResult evaluate_block(Interpreter* interp, Scope* scope, Node* node) {
     NBlock block = node->data.block;
 
     Scope sub_scope = create_scope(scope);
@@ -216,7 +216,7 @@ EvalResult evaluate_block(Scope* scope, Node* node) {
     EvalResult last_result = (EvalResult) { 0 };
 
     for (int32_t i = 0; i < block.nodes.count; ++i) {
-        last_result = evaluate_node(&sub_scope, &block.nodes.nodes[i]);
+        last_result = evaluate_node(interp, &sub_scope, &block.nodes.nodes[i]);
 
         if (last_result.break_type == EBT_RETURN) {
             break;
@@ -230,11 +230,11 @@ EvalResult evaluate_block(Scope* scope, Node* node) {
 
 
 
-EvalResult evaluate_bin_expr(Scope* scope, Node* node) {
+EvalResult evaluate_bin_expr(Interpreter* interp, Scope* scope, Node* node) {
     NBinExpr bin_expr = node->data.bin_expr;
 
-    Value left_value = evaluate_node(scope, bin_expr.left).value;
-    Value right_value = evaluate_node(scope, bin_expr.right).value;
+    Value left_value = evaluate_node(interp, scope, bin_expr.left).value;
+    Value right_value = evaluate_node(interp, scope, bin_expr.right).value;
 
     /* Auto-casting */
     if (left_value.type != right_value.type) {
@@ -460,10 +460,10 @@ EvalResult evaluate_bin_expr(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_unary_expr(Scope* scope, Node* node) {
+EvalResult evaluate_unary_expr(Interpreter* interp, Scope* scope, Node* node) {
     NUnExpr un_expr = node->data.un_expr;
 
-    Value expr_value = evaluate_node(scope, un_expr.expr).value;
+    Value expr_value = evaluate_node(interp, scope, un_expr.expr).value;
 
     Value result_value = (Value) { 0 };
     result_value.type = expr_value.type;
@@ -495,11 +495,11 @@ EvalResult evaluate_unary_expr(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_assign_expr(Scope* scope, Node* node) {
+EvalResult evaluate_assign_expr(Interpreter* interp, Scope* scope, Node* node) {
     NAssignExpr assign_expr = node->data.assign_expr;
 
-    Value var_value = evaluate_node(scope, assign_expr.ident).value;
-    Value assign_value = evaluate_node(scope, assign_expr.value).value;
+    Value var_value = evaluate_node(interp, scope, assign_expr.ident).value;
+    Value assign_value = evaluate_node(interp, scope, assign_expr.value).value;
 
     /*  Auto-casting */
     if (var_value.type != assign_value.type) {
@@ -620,7 +620,7 @@ EvalResult evaluate_assign_expr(Scope* scope, Node* node) {
     };
 }
 
-EvalResult evaluate_call_expr(Scope* scope, Node* node) {
+EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
     NCallExpr call_expr = node->data.call_expr;
 
     // TODO: Member expr
@@ -629,7 +629,7 @@ EvalResult evaluate_call_expr(Scope* scope, Node* node) {
         exit(1);
     }
 
-    Value fn_ptr = evaluate_node(scope, call_expr.member).value;
+    Value fn_ptr = evaluate_node(interp, scope, call_expr.member).value;
     ValueFunction* fn_value = (ValueFunction*) fn_ptr.value.u64;
 
     EvalResult result = (EvalResult) { 0 };
@@ -640,12 +640,12 @@ EvalResult evaluate_call_expr(Scope* scope, Node* node) {
 
         ValueFunctionParam* param_list = (ValueFunctionParam*) fn_value->params;
 
-        Scope sub_scope = create_scope(scope);
+        Scope sub_scope = create_scope(&interp->scope);
 
         // Defining parameter values with arguments
         for (int32_t i = 0; i < arg_array.count; ++i) {
             NArgument argument = arg_array.nodes[i].data.argument;
-            Value arg_value = evaluate_node(&sub_scope, argument.expr).value;
+            Value arg_value = evaluate_node(interp, &sub_scope, argument.expr).value;
             ValueFunctionParam param = param_list[i];
 
             scope_declare_var(&sub_scope, param.name);
@@ -655,7 +655,7 @@ EvalResult evaluate_call_expr(Scope* scope, Node* node) {
         EvalResult last_result = (EvalResult) { 0 };
 
         for (int32_t i = 0; i < fn_block.nodes.count; ++i) {
-            last_result = evaluate_node(&sub_scope, &fn_block.nodes.nodes[i]);
+            last_result = evaluate_node(interp, &sub_scope, &fn_block.nodes.nodes[i]);
 
             if (last_result.break_type == EBT_RETURN) {
                 break;
@@ -670,7 +670,7 @@ EvalResult evaluate_call_expr(Scope* scope, Node* node) {
     return result;
 }
 
-EvalResult evaluate_cast_expr(Scope* scope, Node* node) {
+EvalResult evaluate_cast_expr(Interpreter* interp, Scope* scope, Node* node) {
     NCastExpr cast_expr = node->data.cast_expr;
 
     // TODO: Member expr
@@ -681,13 +681,13 @@ EvalResult evaluate_cast_expr(Scope* scope, Node* node) {
 
     ValueType cast_type = get_value_type_from_string(cast_expr.type->data.ident_lit.value);
 
-    Value value = evaluate_node(scope, cast_expr.expr).value;
+    Value value = evaluate_node(interp, scope, cast_expr.expr).value;
     Value result = cast_value(value, cast_type);
 
     return (EvalResult) { .value = result, .break_type = EBT_NONE };
 }
 
-EvalResult evaluate_node(Scope* scope, Node* node) {
+EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT: {
             NIntLit int_lit = node->data.int_lit;
@@ -717,47 +717,21 @@ EvalResult evaluate_node(Scope* scope, Node* node) {
             return (EvalResult) { .value = value, .break_type = EBT_NONE };
         } break;
 
+        case NT_RETURN_STAT:   return evaluate_return_stat(interp, scope, node);
+        case NT_BREAK_STAT:    return evaluate_break_stat(interp, scope, node);
+        case NT_CONTINUE_STAT: return evaluate_continue_stat(interp, scope, node);
+        case NT_VAR_STAT:      return evaluate_var_stat(interp, scope, node);
+        case NT_FUNC_STAT:     return evaluate_fn_stat(interp, scope, node);
+        case NT_IF_STAT:       return evaluate_if_stat(interp, scope, node);
+        case NT_WHILE_STAT:    return evaluate_while_stat(interp, scope, node);
 
-        case NT_RETURN_STAT:
-            return evaluate_return_stat(scope, node);
+        case NT_BLOCK: return evaluate_block(interp, scope, node);
 
-        case NT_BREAK_STAT:
-            return evaluate_break_stat(scope, node);
-
-        case NT_CONTINUE_STAT:
-            return evaluate_continue_stat(scope, node);
-
-        case NT_VAR_STAT:
-            return evaluate_var_stat(scope, node);
-
-        case NT_FUNC_STAT:
-            return evaluate_fn_stat(scope, node);
-
-        case NT_IF_STAT:
-            return evaluate_if_stat(scope, node);
-
-        case NT_WHILE_STAT:
-            return evaluate_while_stat(scope, node);
-
-
-        case NT_BLOCK:
-            return evaluate_block(scope, node);
-
-
-        case NT_BIN_EXPR:
-            return evaluate_bin_expr(scope, node);
-
-        case NT_UN_EXPR:
-            return evaluate_unary_expr(scope, node);
-
-        case NT_ASSIGN_EXPR:
-            return evaluate_assign_expr(scope, node);
-
-        case NT_CALL_EXPR:
-            return evaluate_call_expr(scope, node);
-
-        case NT_CAST_EXPR:
-            return evaluate_cast_expr(scope, node);
+        case NT_BIN_EXPR:    return evaluate_bin_expr(interp, scope, node);
+        case NT_UN_EXPR:     return evaluate_unary_expr(interp, scope, node);
+        case NT_ASSIGN_EXPR: return evaluate_assign_expr(interp, scope, node);
+        case NT_CALL_EXPR:   return evaluate_call_expr(interp, scope, node);
+        case NT_CAST_EXPR:   return evaluate_cast_expr(interp, scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node->type]);
@@ -785,7 +759,7 @@ void run_interpreter(Interpreter* interp) {
     NProgram program = interp->ast.data.program;
 
     for (int32_t i = 0; i < program.nodes.count; ++i) {
-        evaluate_node(&interp->scope, &program.nodes.nodes[i]);
+        evaluate_node(interp, &interp->scope, &program.nodes.nodes[i]);
     }
 
     Value main_fn_ptr = scope_get_var(&interp->scope, "main");
@@ -793,7 +767,7 @@ void run_interpreter(Interpreter* interp) {
     NBlock fn_block = main_fn_value->node->data.block;
 
     for (int32_t i = 0; i < fn_block.nodes.count; ++i) {
-        EvalResult result = evaluate_node(&interp->scope, &fn_block.nodes.nodes[i]);
+        EvalResult result = evaluate_node(interp, &interp->scope, &fn_block.nodes.nodes[i]);
         Value value = result.value;
 
         printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
