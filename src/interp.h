@@ -13,7 +13,9 @@ typedef struct Scope {
     uint32_t varcount;
 
     char* types_k[256];
+    Struct* structs[256];
     uint32_t typecount;
+    uint32_t structcount;
 } Scope;
 
 Scope create_scope(Scope* parent);

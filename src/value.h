@@ -2,6 +2,7 @@
 #define VALUE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef enum ValueType {
     VT_NONE,
@@ -20,11 +21,12 @@ typedef enum ValueType {
 
 extern const char* ValueTypeNames[];
 
-struct Value;
+typedef struct Value Value;
 
 typedef struct Struct {
     char** entries;
-    struct Value* values;
+    Value* values;
+    size_t count;
 } Struct;
 
 typedef struct Value {

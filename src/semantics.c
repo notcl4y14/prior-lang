@@ -80,6 +80,13 @@ ValueType process_var_stat(Semantics* s, Node* node) {
         variable_type = VT_FLOAT64;
     }
 
+    if (variable_type == VT_NONE) {
+        // TODO: bad code, sprintf, fix.
+        char emsg[512] = {0};
+        sprintf(emsg, "Type '%s' is not defined!", type_name);
+        set_semantics_error(s, emsg);
+    }
+
     // ValueType value_type = process_node(s, data->value);
 
     // printf("%s\n", ValueTypeNames[variable_type]);
@@ -196,7 +203,13 @@ ValueType process_cast_expr(Semantics* s, Node* node) {
 
 ValueType process_struct_stat(Semantics* s, Node* node) {
     NStructStat struct_stat = node->data.struct_stat;
+    // hard to read: add struct's name to list of existing structs
     s->scope->types_k[s->scope->typecount++] = struct_stat.ident->data.ident_lit.value;
+    // TODO: process each field
+    // for (size_t i = 0; i < struct_stat.fields.count; i++) {
+    //     NField field = struct_stat.fields.nodes[i].data.field;
+        
+    // }
     return VT_NONE;
 }
 
@@ -255,8 +268,13 @@ ValueType process_node(Semantics* s, Node* node) {
 
         case NT_CAST_EXPR:
             return process_cast_expr(s, node);
+        
         case NT_STRUCT_STAT:
             return process_struct_stat(s, node);
+        
+        case NT_FIELD:
+            assert(false); // TODO: implement
+
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);
             assert(false);

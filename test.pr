@@ -2,6 +2,12 @@ fn add(x: i64, y: i64): i64 {
     return (x + y);
 }
 
+struct MyStruct {
+  x: i32,
+  y: u32,
+  z: i8
+}
+
 // agugu
 // abakaer // doo doo
 fn main(): i32 {

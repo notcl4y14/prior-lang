@@ -687,6 +687,22 @@ EvalResult evaluate_cast_expr(Interpreter* interp, Scope* scope, Node* node) {
     return (EvalResult) { .value = result, .break_type = EBT_NONE };
 }
 
+EvalResult evaluate_struct_stat(Interpreter* interp, Scope* scope, Node* node) {
+    const uint32_t index = interp->scope.structcount++;
+    NodeArr fields = node->data.struct_stat.fields;
+
+    Struct struct_;
+    struct_.count = fields.count;
+    struct_.entries = malloc(sizeof(*struct_.entries) * struct_.count);
+    struct_.values = malloc(sizeof(*struct_.values) * struct_.count);
+
+    for (size_t i = 0; i < fields.count; i++) {
+        struct_.entries[i] = str_alloc_copy(fields.nodes[i].data.field.ident->data.ident_lit.value);
+        // TODO: add the values
+    }
+    return (EvalResult) { 0 };
+}
+
 EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT: {
@@ -732,6 +748,7 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_ASSIGN_EXPR: return evaluate_assign_expr(interp, scope, node);
         case NT_CALL_EXPR:   return evaluate_call_expr(interp, scope, node);
         case NT_CAST_EXPR:   return evaluate_cast_expr(interp, scope, node);
+        case NT_STRUCT_STAT: return evaluate_struct_stat(interp, scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node->type]);
