@@ -40,6 +40,15 @@ ValueType process_continue_stat(Semantics* s, Node* node) {
     return VT_NONE;
 }
 
+static bool struct_exists(Semantics* s, char* struct_name) {
+    for (uint32_t i = 0; i < s->scope->typecount; i++) {
+        if (!strcmp(s->scope->types_k[i], struct_name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 ValueType process_var_stat(Semantics* s, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
@@ -47,7 +56,9 @@ ValueType process_var_stat(Semantics* s, Node* node) {
 
     ValueType variable_type = VT_NONE;
 
-    if (strcmp(type_name, "i8") == 0) {
+    if (struct_exists(s, type_name)) {
+        variable_type = VT_STRUCT;
+    } else if (strcmp(type_name, "i8") == 0) {
         variable_type = VT_INT8;
     } else if (strcmp(type_name, "i16") == 0) {
         variable_type = VT_INT16;
@@ -183,6 +194,12 @@ ValueType process_cast_expr(Semantics* s, Node* node) {
     return get_value_type_from_string(node->data.cast_expr.type->data.ident_lit.value);
 }
 
+ValueType process_struct_stat(Semantics* s, Node* node) {
+    NStructStat struct_stat = node->data.struct_stat;
+    s->scope->types_k[s->scope->typecount++] = struct_stat.ident->data.ident_lit.value;
+    return VT_NONE;
+}
+
 ValueType process_node(Semantics* s, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT:
@@ -238,7 +255,8 @@ ValueType process_node(Semantics* s, Node* node) {
 
         case NT_CAST_EXPR:
             return process_cast_expr(s, node);
-
+        case NT_STRUCT_STAT:
+            return process_struct_stat(s, node);
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);
             assert(false);
@@ -261,10 +279,11 @@ const char* get_semantics_error(Semantics* s) {
     return s->errmsg;
 }
 
-Semantics create_semantics() {
+Semantics create_semantics(Scope* scope) {
     return (Semantics) {
         .errmsg = { 0 },
         .error = false,
+        .scope = scope
     };
 }
 

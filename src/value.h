@@ -15,9 +15,17 @@ typedef enum ValueType {
     VT_UINT64,
     VT_FLOAT32,
     VT_FLOAT64,
+    VT_STRUCT
 } ValueType;
 
 extern const char* ValueTypeNames[];
+
+struct Value;
+
+typedef struct Struct {
+    char** entries;
+    struct Value* values;
+} Struct;
 
 typedef struct Value {
     ValueType type;
@@ -32,10 +40,10 @@ typedef struct Value {
         uint64_t u64;
         float  f32;
         double f64;
+        Struct struct_;
     } value;
 } Value;
 
 ValueType get_value_type_from_string(const char* string);
 Value cast_value(Value value, ValueType cast_type);
-
 #endif

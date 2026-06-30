@@ -49,7 +49,7 @@ void print_indent(int32_t indent) {
 
 
 void print_node_tree(Node* node, int32_t indent) {
-    if (node->type < 0 || node->type >= (sizeof(PrintNodeTree_Funcs) / sizeof(PrintNodeTree_Func[0]))) {
+    if (node->type < 0 || node->type >= (sizeof(PrintNodeTree_Funcs) / sizeof(PrintNodeTree_Funcs[0]))) {
         printf("WARNING: %s not handled in print_node_tree\n", NodeTypeNames[node->type]);
         return;
     } else if (PrintNodeTree_Funcs[node->type] == NULL) {

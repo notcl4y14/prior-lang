@@ -130,7 +130,8 @@ void compile(int32_t argc, char* argv[]) {
         if (show_stages)
             printf("Processing semantics...\n");
 
-        Semantics semantics = create_semantics();
+        Scope scope = create_scope(NULL);
+        Semantics semantics = create_semantics(&scope);
         process_semantics(&semantics, &result);
 
         if (semantics.error) {
@@ -237,21 +238,23 @@ void interpret(int32_t argc, char* argv[]) {
     /* Semantics Stage */
     if (show_stages) printf("Processing semantics...\n");
 
-    Semantics semantics = create_semantics();
-    process_semantics(&semantics, &ast);
+    // Semantics semantics = create_semantics();
+    // process_semantics(&semantics, &ast);
 
-    if (semantics.error) {
-        printf("%s\n", get_semantics_error(&semantics));
+    // if (semantics.error) {
+    //     printf("%s\n", get_semantics_error(&semantics));
 
-        free_token_array(&token_array);
-        free_lexer(&lexer);
+    //     free_token_array(&token_array);
+    //     free_lexer(&lexer);
 
-        free(lexer_code);
-        lexer_code = NULL;
-        return;
-    }
+    //     free(lexer_code);
+    //     lexer_code = NULL;
+    //     return;
+    // }
 
     Interpreter interp = create_interpreter(ast);
+
+    Semantics semantics = create_semantics(&interp.scope);
 
     // Preloading
     scope_declare_var(&interp.scope, "false");

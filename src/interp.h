@@ -11,6 +11,9 @@ typedef struct Scope {
     char* variables_k[256];
     Value variables_v[256];
     uint32_t varcount;
+
+    char* types_k[256];
+    uint32_t typecount;
 } Scope;
 
 Scope create_scope(Scope* parent);
