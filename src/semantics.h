@@ -2,7 +2,7 @@
 #define SEMANTICS_H
 
 #include "parser.h"
-#include "interp.h"
+#include "scope.h"
 
 #define SEMANTICS_ERROR_SIZE 256
 

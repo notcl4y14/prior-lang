@@ -10,6 +10,7 @@ add_library(prior_core STATIC
     src/mem.c
     src/parser.c
     src/printast.c
+    src/scope.c
     src/semantics.c
     src/value.c
     src/utils.c
