@@ -220,6 +220,12 @@ ValueType process_struct_stat(Semantics* s, Node* node) {
         char* field_name = field.ident->data.ident_lit.value;
         ValueType field_type = get_value_type_from_string(field.type->data.ident_lit.value);
 
+        if (field_type == VT_NONE) {
+            if (struct_exists(s, field.type->data.ident_lit.value)) {
+                field_type = VT_STRUCT;
+            }
+        }
+
         struct_value.entries[struct_value.count] = str_alloc_copy(field_name);
         struct_value.values[struct_value.count] = (Value) { .type = field_type, .value = {} };
         struct_value.count++;

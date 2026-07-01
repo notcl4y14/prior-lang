@@ -8,6 +8,16 @@ struct MyStruct {
   z: i8
 }
 
+struct Vector2f {
+    x: f64,
+    y: f64,
+}
+
+struct Entity {
+    id: u64,
+    position: Vector2f,
+}
+
 // agugu
 // abakaer // doo doo
 fn main(): i32 {
