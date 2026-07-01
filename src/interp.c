@@ -1,3 +1,4 @@
+#include "scope.h"
 #include "type.h"
 #include "value_types.h"
 #include <interp.h>
@@ -47,21 +48,73 @@ EvalResult evaluate_continue_stat(Interpreter* interp, Scope* scope, Node* node)
 EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
-    char* name = var_stat.ident->data.ident_lit.value;
+    char* ident_name = var_stat.ident->data.ident_lit.value;
     char* type_name = var_stat.type->data.ident_lit.value;
 
-    // printf("%s: %s\n", name, type_name);
+    Type type = type_table_get_type(&interp->scope.type_table, type_name);
 
-    scope_declare_var(scope, name);
+    /***
+     * TODO: Put value/struct instantiation into
+     * a new function.
+     */
 
+    scope_declare_var(scope, ident_name);
+
+    /***
+     * Ig bro.
+     */
     if (var_stat.value != NULL) {
-        Value value = evaluate_node(interp, scope, var_stat.value).value;
-        // value = cast_value(value, var_stat.return_type);
+        Value value = (Value) { 0 };
 
-        scope_define_var(scope, name, value);
+        if (type.type == TYPE_TYPE_STRUCT) {
+            assert(var_stat.value->type == NT_COMPOUND_LIT);
+
+            Value struct_value = (Value) { .type = VT_STRUCT };
+
+            /* Initializing struct value data */
+            Struct* struct_data = &struct_value.value.struct_;
+
+            struct_data->fields = calloc(type.data.data_struct.count, sizeof(char*));
+            assert(struct_data->fields != NULL);
+
+            struct_data->values = calloc(type.data.data_struct.count, sizeof(Value));
+            assert(struct_data->values != NULL);
+
+            /* Inserting compound values into the fields */
+            for (int32_t i = 0; i < type.data.data_struct.count; ++i) {
+                Type field_type = type_table_get_type(&interp->scope.type_table, type.data.data_struct.fields_types[i]);
+                char* struct_field_name = type.data.data_struct.fields_names[i];
+
+                struct_data->fields[i] = struct_field_name;
+                struct_data->values[i].type = get_typedef_value_type(field_type);
+
+                /* Iterating through compound fields */
+                for (int32_t j = 0; j < var_stat.value->data.compound_lit.values.count; ++j) {
+                    Node* compound_field = &var_stat.value->data.compound_lit.values.nodes[j];
+                    assert(compound_field->type == NT_ASSIGN_EXPR);
+
+                    const char* compound_field_name = compound_field->data.assign_expr.ident->data.ident_lit.value;
+
+                    /* Checking if the compound field matches with the struct field */
+                    if (strcmp(struct_field_name, compound_field_name) == 0) {
+                        Value compound_field_value = evaluate_node(interp, scope, compound_field->data.assign_expr.value).value;
+
+                        /* Auto-cast */
+                        if (compound_field_value.type != struct_data->values[i].type) {
+                            compound_field_value = cast_value(compound_field_value, struct_data->values[i].type);
+                        }
+
+                        /* Assigning the compound field to the struct instance field */
+                        struct_data->values[i].value = compound_field_value.value;
+                    }
+                }
+            }
+        } else {
+            value = evaluate_node(interp, scope, var_stat.value).value;
+        }
+
+        scope_define_var(scope, ident_name, value);
     } else {
-        Type type = type_table_get_type(&interp->scope.type_table, type_name);
-
         /* Instantiating a struct */
         if (type.type == TYPE_TYPE_STRUCT) {
             Value struct_value = (Value) { .type = VT_STRUCT };
@@ -83,6 +136,8 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
                 struct_data->values[i].type = get_typedef_value_type(field_type);
                 memset(&struct_data->values[i].value, 0, sizeof(struct_data->values[i].value));
             }
+
+            scope_define_var(scope, ident_name, struct_value);
         }
     }
 
