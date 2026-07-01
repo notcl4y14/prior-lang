@@ -6,6 +6,7 @@
 #include <lexer.h>
 #include <semantics.h>
 #include "scope.h"
+#include "type.h"
 #include "utils.h"
 
 #include <stdbool.h>
@@ -242,6 +243,18 @@ void interpret(int32_t argc, char* argv[]) {
     Interpreter interp = create_interpreter(ast);
 
     Semantics semantics = create_semantics(&interp.scope);
+
+    /* Assigning core types */
+    type_table_assign_type( &interp.scope.type_table, "i8",  create_value_typedef(VT_INT8)    );
+    type_table_assign_type( &interp.scope.type_table, "i16", create_value_typedef(VT_INT16)   );
+    type_table_assign_type( &interp.scope.type_table, "i32", create_value_typedef(VT_INT32)   );
+    type_table_assign_type( &interp.scope.type_table, "i64", create_value_typedef(VT_INT64)   );
+    type_table_assign_type( &interp.scope.type_table, "u8",  create_value_typedef(VT_UINT8)   );
+    type_table_assign_type( &interp.scope.type_table, "u16", create_value_typedef(VT_UINT16)  );
+    type_table_assign_type( &interp.scope.type_table, "u32", create_value_typedef(VT_UINT32)  );
+    type_table_assign_type( &interp.scope.type_table, "u64", create_value_typedef(VT_UINT64)  );
+    type_table_assign_type( &interp.scope.type_table, "f32", create_value_typedef(VT_FLOAT32) );
+    type_table_assign_type( &interp.scope.type_table, "f64", create_value_typedef(VT_FLOAT64) );
 
     process_semantics(&semantics, &ast);
 

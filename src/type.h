@@ -44,7 +44,6 @@ typedef enum TypeType {
  *     alias: "uint8_t" -> "u8" -> VT_UINT8
  */
 typedef struct Type {
-    char*    ident;
     TypeType type;
     union {
         char*          data_alias;
@@ -53,9 +52,9 @@ typedef struct Type {
     } data;
 } Type;
 
-Type create_alias_typedef(char* ident, char* type_name);
-Type create_value_typedef(char* ident, ValueType value_type);
-Type create_struct_typedef(char* ident, TypeStructData struct_type);
+Type create_alias_typedef(const char* type_name);
+Type create_value_typedef(ValueType value_type);
+Type create_struct_typedef(TypeStructData struct_type);
 
 /***
  * TypeTable is a table that stores types with their types
@@ -82,12 +81,12 @@ void free_type_table(TypeTable* tt);
  * Creates a new type definition in the Type Table.
  * The `Type type` argument has to be fully initialized.
  */
-void type_table_assign_type(TypeTable* tt, Type type);
+void type_table_assign_type(TypeTable* tt, const char* ident, Type type);
 
 /***
  * Returns the type from the TypeTable by identifier.
  * Returns Type with TYPE_TYPE_NONE if not found.
  */
-Type type_table_get_type(TypeTable* tt, char* ident);
+Type type_table_get_type(TypeTable* tt, const char* ident);
 
 #endif

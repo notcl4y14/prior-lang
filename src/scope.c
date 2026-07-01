@@ -1,5 +1,6 @@
 #include "scope.h"
 #include "mem.h"
+#include "type.h"
 #include "value.h"
 #include <assert.h>
 #include <stdio.h>
@@ -8,6 +9,7 @@
 Scope create_scope(Scope* parent) {
     Scope scope = (Scope) { 0 };
     scope.parent = parent;
+    scope.type_table = create_type_table();
     return scope;
 }
 
@@ -62,13 +64,20 @@ Value scope_get_var(Scope* scope, char* name) {
 }
 
 void print_scope_structs(Scope* scope) {
-    for (int32_t i = 0; i < scope->structcount; ++i) {
-        const Struct* struct_ = &scope->structs[i];
+    for (int32_t i = 0; i < scope->type_table.count; ++i) {
+        const Type* type = &scope->type_table.types_values[i];
 
-        printf("struct %s {\n", scope->types_k[i]);
+        if (type->type != TYPE_TYPE_STRUCT) {
+            continue;
+        }
+
+        const char* type_ident = scope->type_table.types_idents[i];
+        const TypeStructData* struct_ = &type->data.data_struct;
+
+        printf("struct %s {\n", type_ident);
 
         for (int32_t j = 0; j < struct_->count; ++j) {
-            printf("\t%s: %s,\n", struct_->entries[j], ValueTypeNames[struct_->values[j].type]);
+            printf("\t%s: %s,\n", struct_->fields_names[j], struct_->fields_types[j]);
         }
 
         printf("}\n");

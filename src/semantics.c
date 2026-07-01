@@ -1,4 +1,4 @@
-#include "mem.h"
+#include "type.h"
 #include "value.h"
 #include "parser.h"
 #include <assert.h>
@@ -7,26 +7,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-ValueType process_node(Semantics* s, Node* node);
+Type process_node(Semantics* s, Node* node);
 
-ValueType process_integer_lit(Semantics* s, Node* node) {
-    return VT_INT32;
+Type process_integer_lit(Semantics* s, Node* node) {
+    return create_value_typedef(VT_INT32);
 }
 
-ValueType process_float_lit(Semantics* s, Node* node) {
-    return VT_FLOAT32;
+Type process_float_lit(Semantics* s, Node* node) {
+    return create_value_typedef(VT_NONE);
 }
 
-ValueType process_ident_lit(Semantics* s, Node* node) {
-    return VT_NONE;
+Type process_ident_lit(Semantics* s, Node* node) {
+    return (Type) { 0 };
 }
 
-ValueType process_return_stat(Semantics* s, Node* node) {
+Type process_return_stat(Semantics* s, Node* node) {
     NRetStat ret_stat = node->data.ret_stat;
 
     if (ret_stat.expr == NULL) {
         // ret_stat.return_type = VT_NONE;
-        return VT_NONE;
+        return (Type) { 0 };
     }
 
     // data->return_type = process_node(s, data->value);
@@ -34,56 +34,32 @@ ValueType process_return_stat(Semantics* s, Node* node) {
     return process_node(s, ret_stat.expr);
 }
 
-ValueType process_break_stat(Semantics* s, Node* node) {
-    return VT_NONE;
+Type process_break_stat(Semantics* s, Node* node) {
+    return (Type) { 0 };
 }
 
-ValueType process_continue_stat(Semantics* s, Node* node) {
-    return VT_NONE;
+Type process_continue_stat(Semantics* s, Node* node) {
+    return (Type) { 0 };
 }
 
-static bool struct_exists(Semantics* s, char* struct_name) {
-    for (uint32_t i = 0; i < s->scope->typecount; i++) {
-        if (!strcmp(s->scope->types_k[i], struct_name)) {
-            return true;
-        }
-    }
-    return false;
-}
+// static bool struct_exists(Semantics* s, char* struct_name) {
+//     for (uint32_t i = 0; i < s->scope->typecount; i++) {
+//         if (!strcmp(s->scope->types_k[i], struct_name)) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
-ValueType process_var_stat(Semantics* s, Node* node) {
+Type process_var_stat(Semantics* s, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
     char* type_name = var_stat.ident->data.ident_lit.value;
 
-    ValueType variable_type = VT_NONE;
-
     // TODO: Implement a hashmap that stores types and their names
-    if (struct_exists(s, type_name)) {
-        variable_type = VT_STRUCT;
-    } else if (strcmp(type_name, "i8") == 0) {
-        variable_type = VT_INT8;
-    } else if (strcmp(type_name, "i16") == 0) {
-        variable_type = VT_INT16;
-    } else if (strcmp(type_name, "i32") == 0) {
-        variable_type = VT_INT32;
-    } else if (strcmp(type_name, "i64") == 0) {
-        variable_type = VT_INT64;
-    } else if (strcmp(type_name, "u8") == 0) {
-        variable_type = VT_UINT8;
-    } else if (strcmp(type_name, "u16") == 0) {
-        variable_type = VT_UINT16;
-    } else if (strcmp(type_name, "u32") == 0) {
-        variable_type = VT_UINT32;
-    } else if (strcmp(type_name, "u64") == 0) {
-        variable_type = VT_UINT64;
-    } else if (strcmp(type_name, "f32") == 0) {
-        variable_type = VT_FLOAT32;
-    } else if (strcmp(type_name, "f64") == 0) {
-        variable_type = VT_FLOAT64;
-    }
+    Type variable_type = type_table_get_type(&s->scope->type_table, type_name);
 
-    if (variable_type == VT_NONE) {
+    if (variable_type.type == TYPE_TYPE_NONE) {
         // TODO: bad code, sprintf, fix.
         char emsg[512] = {0};
         sprintf(emsg, "Type '%s' is not defined!", type_name);
@@ -98,18 +74,18 @@ ValueType process_var_stat(Semantics* s, Node* node) {
     return variable_type;
 }
 
-ValueType process_fn_stat(Semantics* s, Node* node) {
+Type process_fn_stat(Semantics* s, Node* node) {
     NFuncStat func_stat = node->data.func_stat;
 
     // char* type_name = ((NodeLiteralData*)(data->type.pool_ptr))->value;
 
     process_node(s, func_stat.body);
 
-    return VT_NONE;
+    return (Type) { 0 };
 }
 
 
-ValueType process_if_stat(Semantics* s, Node* node) {
+Type process_if_stat(Semantics* s, Node* node) {
     NIfStat if_stat = node->data.if_stat;
 
     process_node(s, if_stat.condition);
@@ -119,22 +95,22 @@ ValueType process_if_stat(Semantics* s, Node* node) {
         process_node(s, if_stat.alternate);
     }
 
-    return VT_NONE;
+    return (Type) { 0 };
 }
 
-ValueType process_while_stat(Semantics* s, Node* node) {
+Type process_while_stat(Semantics* s, Node* node) {
     NWhileStat while_stat = node->data.while_stat;
 
     process_node(s, while_stat.condition);
     process_node(s, while_stat.body);
 
-    return VT_NONE;
+    return (Type) { 0 };
 }
 
-ValueType process_block(Semantics* s, Node* node) {
+Type process_block(Semantics* s, Node* node) {
     NBlock block = node->data.block;
 
-    ValueType last_type = VT_NONE;
+    Type last_type = (Type) { 0 };
 
     for (int32_t i = 0; i < block.nodes.count; ++i) {
         last_type = process_node(s, &block.nodes.nodes[i]);
@@ -143,7 +119,7 @@ ValueType process_block(Semantics* s, Node* node) {
     return last_type;
 }
 
-ValueType process_bin_expr(Semantics* s, Node* node) {
+Type process_bin_expr(Semantics* s, Node* node) {
     NBinExpr bin_expr = node->data.bin_expr;
 
     // int + int = int
@@ -154,7 +130,7 @@ ValueType process_bin_expr(Semantics* s, Node* node) {
     // TODO: Implement auto-casting
 
     Node* left = bin_expr.left;
-    ValueType left_type = process_node(s, left);
+    Type left_type = process_node(s, left);
 
     Node* right = bin_expr.right;
     process_node(s, right);
@@ -172,7 +148,7 @@ ValueType process_bin_expr(Semantics* s, Node* node) {
     return left_type;
 }
 
-ValueType process_update_expr(Semantics* s, Node* node) {
+Type process_update_expr(Semantics* s, Node* node) {
     NUpdateExpr update_expr = node->data.update_expr;
     // data->return_type = process_node(s, data->expr);
 
@@ -180,7 +156,7 @@ ValueType process_update_expr(Semantics* s, Node* node) {
     return process_node(s, update_expr.expr);
 }
 
-ValueType process_assign_expr(Semantics* s, Node* node) {
+Type process_assign_expr(Semantics* s, Node* node) {
     NAssignExpr assign_expr = node->data.assign_expr;
     // data->return_type = process_node(s, data->value);
 
@@ -188,7 +164,7 @@ ValueType process_assign_expr(Semantics* s, Node* node) {
     return process_node(s, assign_expr.value);
 }
 
-ValueType process_unary_expr(Semantics* s, Node* node) {
+Type process_unary_expr(Semantics* s, Node* node) {
     NUnExpr un_expr = node->data.un_expr;
     // data->return_type = process_node(s, data->expr);
 
@@ -196,47 +172,50 @@ ValueType process_unary_expr(Semantics* s, Node* node) {
     return process_node(s, un_expr.expr);
 }
 
-ValueType process_call_expr(Semantics* s, Node* node) {
-    return VT_NONE;
+Type process_call_expr(Semantics* s, Node* node) {
+    return (Type) { 0 };
 }
 
-ValueType process_cast_expr(Semantics* s, Node* node) {
-    return get_value_type_from_string(node->data.cast_expr.type->data.ident_lit.value);
+Type process_cast_expr(Semantics* s, Node* node) {
+    return type_table_get_type(
+        &s->scope->type_table,
+        node->data.cast_expr.type->data.ident_lit.value
+    );
 }
 
-ValueType process_struct_stat(Semantics* s, Node* node) {
+Type process_struct_stat(Semantics* s, Node* node) {
     NStructStat struct_stat = node->data.struct_stat;
-    // hard to read: add struct's name to list of existing structs
-    s->scope->types_k[s->scope->typecount++] = struct_stat.ident->data.ident_lit.value;
 
-    Struct struct_value = (Struct) { 0 };
-    // TODO: Free system
-    struct_value.entries = calloc(256, sizeof(char*));
-    struct_value.values = calloc(256, sizeof(Value));
+    TypeStructData type_struct_data = create_type_struct_data();
 
     // Process each field and assign them types
     for (size_t i = 0; i < struct_stat.fields.count; i++) {
         NField field = struct_stat.fields.nodes[i].data.field;
-        char* field_name = field.ident->data.ident_lit.value;
-        ValueType field_type = get_value_type_from_string(field.type->data.ident_lit.value);
 
-        if (field_type == VT_NONE) {
-            if (struct_exists(s, field.type->data.ident_lit.value)) {
-                field_type = VT_STRUCT;
-            }
+        char* field_name = field.ident->data.ident_lit.value;
+        char* field_type = field.type->data.ident_lit.value;
+
+        /* Check if the type exists in the Type Table */
+        if (type_table_get_type(&s->scope->type_table, field_type).type == TYPE_TYPE_NONE) {
+            // TODO: bad code, sprintf, fix.
+            char emsg[512] = {0};
+            sprintf(emsg, "Undefined \"%s\" type", field_type);
+            set_semantics_error(s, emsg);
+            return (Type) { 0 };
         }
 
-        struct_value.entries[struct_value.count] = str_alloc_copy(field_name);
-        struct_value.values[struct_value.count] = (Value) { .type = field_type, .value = {} };
-        struct_value.count++;
+        type_struct_data.fields_names[i] = field_name;
+        type_struct_data.fields_types[i] = field_type;
+        type_struct_data.count++;
     }
 
-    s->scope->structs[s->scope->structcount++] = struct_value;
+    const char* struct_ident = struct_stat.ident->data.ident_lit.value;
+    type_table_assign_type(&s->scope->type_table, struct_ident, create_struct_typedef(type_struct_data));
 
-    return VT_NONE;
+    return (Type) { 0 };
 }
 
-ValueType process_node(Semantics* s, Node* node) {
+Type process_node(Semantics* s, Node* node) {
     switch (node->type) {
         case NT_INTEGER_LIT:
             return process_integer_lit(s, node);
@@ -301,7 +280,7 @@ ValueType process_node(Semantics* s, Node* node) {
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);
             assert(false);
-            return VT_NONE;
+            return (Type) { 0 };
     }
 }
 

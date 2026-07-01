@@ -12,18 +12,18 @@ int main() {
     TypeTable type_table = create_type_table();
 
     /* Assigning core types */
-    type_table_assign_type( &type_table, create_value_typedef("i8",  VT_INT8)   );
-    type_table_assign_type( &type_table, create_value_typedef("i16", VT_INT16)  );
-    type_table_assign_type( &type_table, create_value_typedef("i32", VT_INT32)  );
-    type_table_assign_type( &type_table, create_value_typedef("i64", VT_INT64)  );
-    type_table_assign_type( &type_table, create_value_typedef("u8",  VT_UINT8)  );
-    type_table_assign_type( &type_table, create_value_typedef("u16", VT_UINT16) );
-    type_table_assign_type( &type_table, create_value_typedef("u32", VT_UINT32) );
-    type_table_assign_type( &type_table, create_value_typedef("u64", VT_UINT64) );
+    type_table_assign_type( &type_table, "i8",  create_value_typedef(VT_INT8)   );
+    type_table_assign_type( &type_table, "i16", create_value_typedef(VT_INT16)  );
+    type_table_assign_type( &type_table, "i32", create_value_typedef(VT_INT32)  );
+    type_table_assign_type( &type_table, "i64", create_value_typedef(VT_INT64)  );
+    type_table_assign_type( &type_table, "u8",  create_value_typedef(VT_UINT8)  );
+    type_table_assign_type( &type_table, "u16", create_value_typedef(VT_UINT16) );
+    type_table_assign_type( &type_table, "u32", create_value_typedef(VT_UINT32) );
+    type_table_assign_type( &type_table, "u64", create_value_typedef(VT_UINT64) );
 
     /* Assigning alias types */
-    type_table_assign_type( &type_table, create_alias_typedef("uint32_t", "u32") );
-    type_table_assign_type( &type_table, create_alias_typedef("float", "f32") );
+    type_table_assign_type( &type_table, "uint32_t", create_alias_typedef("u32") );
+    type_table_assign_type( &type_table, "float",    create_alias_typedef("f32") );
 
     /* Assigning struct types */
     TypeStructData struct_data = create_type_struct_data();
@@ -35,13 +35,14 @@ int main() {
         struct_data.fields_types[1] = "float";
         struct_data.count = 2;
 
-        type_table_assign_type( &type_table, create_struct_typedef("Vector2f", struct_data) );
+        type_table_assign_type( &type_table, "Vector2f", create_struct_typedef(struct_data) );
     }
 
     for (int32_t i = 0; i < type_table.count; ++i) {
+        const char* ident = type_table.types_idents[i];
         const Type* tdef = &type_table.types_values[i];
 
-        printf("%s", tdef->ident);
+        printf("%s", ident);
 
         switch (tdef->type) {
             case TYPE_TYPE_ALIAS:  printf("\t: alias "); break;

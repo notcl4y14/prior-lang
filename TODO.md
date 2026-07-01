@@ -24,9 +24,10 @@
     - Or by allocating an array that records every AST allocation to free later
 - [ ] Semantics
   - [x] Implement error system
+  - [ ] Implement MULTIPLE ERRORS system
   - [ ] Implement auto-cast
-  - [ ] Type Table
-    - [ ] Custom types
+  - [x] Type Table
+    - [x] Custom types
   - [ ] Scoping
   - [ ] Let the semantics system declare global variables and declarations instead of the interpreter
 - [ ] Interpterer
