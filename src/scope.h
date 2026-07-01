@@ -22,5 +22,6 @@ void free_scope(Scope* scope);
 void scope_declare_var(Scope* scope, char* name);
 void scope_define_var(Scope* scope, char* name, Value value);
 Value scope_get_var(Scope* scope, char* name);
+void print_scope_structs(Scope* scope);
 
 #endif

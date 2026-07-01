@@ -18,6 +18,7 @@ const char* ValueTypeNames[] = {
     [VT_UINT64]  = "u64",
     [VT_FLOAT32] = "f32",
     [VT_FLOAT64] = "f64",
+    [VT_STRUCT]  = "struct",
 };
 
 ValueType get_value_type_from_string(const char* string) {

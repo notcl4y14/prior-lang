@@ -5,6 +5,7 @@
 #include "error.h"
 #include <lexer.h>
 #include <semantics.h>
+#include "scope.h"
 #include "utils.h"
 
 #include <stdbool.h>
@@ -254,6 +255,9 @@ void interpret(int32_t argc, char* argv[]) {
         lexer_code = NULL;
         return;
     }
+
+    printf("===== SEMANTICS ====\n");
+    print_scope_structs(semantics.scope);
 
     // Preloading
     scope_declare_var(&interp.scope, "false");

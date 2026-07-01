@@ -1,6 +1,8 @@
 #include "scope.h"
 #include "mem.h"
+#include "value.h"
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 Scope create_scope(Scope* parent) {
@@ -57,4 +59,18 @@ Value scope_get_var(Scope* scope, char* name) {
 
     assert(false);
     return (Value) { 0 };
+}
+
+void print_scope_structs(Scope* scope) {
+    for (int32_t i = 0; i < scope->structcount; ++i) {
+        const Struct* struct_ = &scope->structs[i];
+
+        printf("struct %s {\n", scope->types_k[i]);
+
+        for (int32_t j = 0; j < struct_->count; ++j) {
+            printf("\t%s: %s,\n", struct_->entries[j], ValueTypeNames[struct_->values[j].type]);
+        }
+
+        printf("}\n");
+    }
 }

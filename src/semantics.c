@@ -210,6 +210,7 @@ ValueType process_struct_stat(Semantics* s, Node* node) {
     s->scope->types_k[s->scope->typecount++] = struct_stat.ident->data.ident_lit.value;
 
     Struct struct_value = (Struct) { 0 };
+    // TODO: Free system
     struct_value.entries = calloc(256, sizeof(char*));
     struct_value.values = calloc(256, sizeof(Value));
 
