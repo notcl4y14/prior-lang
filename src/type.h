@@ -2,6 +2,7 @@
 #define TYPE_H
 
 #include "value.h"
+#include <stddef.h>
 
 typedef struct Type Type;
 
@@ -11,7 +12,8 @@ typedef struct Type Type;
  */
 typedef struct TypeStructData {
     char** fields_names;
-    Type*  fields_types;
+    char** fields_types;
+    size_t count;
 } TypeStructData;
 
 TypeStructData create_type_struct_data();

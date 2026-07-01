@@ -12,8 +12,10 @@ TypeStructData create_type_struct_data() {
     type_struct_data.fields_names = calloc(256, sizeof(char*));
     assert(type_struct_data.fields_names != NULL && "Failed to allocate (TypeStructData).fields_names");
 
-    type_struct_data.fields_types = calloc(256, sizeof(Type*));
+    type_struct_data.fields_types = calloc(256, sizeof(char*));
     assert(type_struct_data.fields_types != NULL && "Failed to allocate (TypeStructData).fields_types");
+
+    type_struct_data.count = 0;
 
     return type_struct_data;
 }

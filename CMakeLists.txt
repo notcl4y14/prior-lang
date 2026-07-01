@@ -12,6 +12,7 @@ add_library(prior_core STATIC
     src/printast.c
     src/scope.c
     src/semantics.c
+    src/type.c
     src/value.c
     src/utils.c
 )
@@ -39,6 +40,10 @@ add_executable(test_parser EXCLUDE_FROM_ALL test/parser.c)
 target_link_libraries(test_parser PRIVATE prior_core)
 add_test(NAME parser_test COMMAND test_parser)
 
+add_executable(test_typedef EXCLUDE_FROM_ALL test/typedef.c)
+target_link_libraries(test_typedef PRIVATE prior_core)
+add_test(NAME typedef_test COMMAND test_typedef)
+
 add_custom_target(build_tests
-    DEPENDS test_lexer test_main test_parser
+    DEPENDS test_lexer test_main test_parser test_typedef
 )
