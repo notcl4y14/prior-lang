@@ -55,6 +55,7 @@ typedef struct Type {
 Type create_alias_typedef(const char* type_name);
 Type create_value_typedef(ValueType value_type);
 Type create_struct_typedef(TypeStructData struct_type);
+ValueType get_typedef_value_type(Type type);
 
 /***
  * TypeTable is a table that stores types with their types

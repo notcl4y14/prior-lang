@@ -29,5 +29,6 @@ fn main(): i32 {
       * I am a multiline
       * comment too.
       */
+    var my_struct: MyStruct;
     return (u8) add((900), 10/*, (20)*/);
 }

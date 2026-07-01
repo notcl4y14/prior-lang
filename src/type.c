@@ -1,6 +1,8 @@
 #include "type.h"
 #include "mem.h"
+#include "value.h"
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,6 +58,14 @@ Type create_struct_typedef(TypeStructData struct_type) {
     type.data.data_struct = struct_type;
 
     return type;
+}
+
+ValueType get_typedef_value_type(Type type) {
+    switch (type.type) {
+        case TYPE_TYPE_VALUE:   return type.data.data_value;
+        case TYPE_TYPE_STRUCT:  return VT_STRUCT;
+        default: assert(false); return VT_NONE;
+    }
 }
 
 

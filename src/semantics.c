@@ -54,7 +54,7 @@ Type process_continue_stat(Semantics* s, Node* node) {
 Type process_var_stat(Semantics* s, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
-    char* type_name = var_stat.ident->data.ident_lit.value;
+    char* type_name = var_stat.type->data.ident_lit.value;
 
     // TODO: Implement a hashmap that stores types and their names
     Type variable_type = type_table_get_type(&s->scope->type_table, type_name);
