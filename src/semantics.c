@@ -1,8 +1,10 @@
+#include "mem.h"
 #include "value.h"
 #include "parser.h"
 #include <assert.h>
 #include <semantics.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 ValueType process_node(Semantics* s, Node* node);
@@ -56,6 +58,7 @@ ValueType process_var_stat(Semantics* s, Node* node) {
 
     ValueType variable_type = VT_NONE;
 
+    // TODO: Implement a hashmap that stores types and their names
     if (struct_exists(s, type_name)) {
         variable_type = VT_STRUCT;
     } else if (strcmp(type_name, "i8") == 0) {
@@ -205,11 +208,24 @@ ValueType process_struct_stat(Semantics* s, Node* node) {
     NStructStat struct_stat = node->data.struct_stat;
     // hard to read: add struct's name to list of existing structs
     s->scope->types_k[s->scope->typecount++] = struct_stat.ident->data.ident_lit.value;
-    // TODO: process each field
-    // for (size_t i = 0; i < struct_stat.fields.count; i++) {
-    //     NField field = struct_stat.fields.nodes[i].data.field;
-        
-    // }
+
+    Struct struct_value = (Struct) { 0 };
+    struct_value.entries = calloc(256, sizeof(char*));
+    struct_value.values = calloc(256, sizeof(Value));
+
+    // Process each field and assign them types
+    for (size_t i = 0; i < struct_stat.fields.count; i++) {
+        NField field = struct_stat.fields.nodes[i].data.field;
+        char* field_name = field.ident->data.ident_lit.value;
+        ValueType field_type = get_value_type_from_string(field.type->data.ident_lit.value);
+
+        struct_value.entries[struct_value.count] = str_alloc_copy(field_name);
+        struct_value.values[struct_value.count] = (Value) { .type = field_type, .value = {} };
+        struct_value.count++;
+    }
+
+    s->scope->structs[s->scope->structcount++] = struct_value;
+
     return VT_NONE;
 }
 
@@ -268,10 +284,10 @@ ValueType process_node(Semantics* s, Node* node) {
 
         case NT_CAST_EXPR:
             return process_cast_expr(s, node);
-        
+
         case NT_STRUCT_STAT:
             return process_struct_stat(s, node);
-        
+
         case NT_FIELD:
             assert(false); // TODO: implement
 
