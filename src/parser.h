@@ -49,6 +49,7 @@ typedef enum NodeType {
     NT_STRING_LIT,
     NT_IDENT_LIT,
     NT_ARRAY_LIT,
+    NT_COMPOUND_LIT,
 } NodeType;
 
 extern const char* NodeTypeNames[];
@@ -101,6 +102,10 @@ typedef struct NIdentLit {
 typedef struct NArrayLit {
     NodeArr values;
 } NArrayLit;
+
+typedef struct NCompoundLit {
+    NodeArr values;
+} NCompoundLit;
 
 
 /* STATEMENTS */
@@ -231,11 +236,12 @@ typedef struct NCastExpr {
 typedef union NodeData {
     NProgram program;
 
-    NIntLit    int_lit;
-    NFloatLit  float_lit;
-    NStringLit string_lit;
-    NIdentLit  ident_lit;
-    NArrayLit  array_lit;
+    NIntLit      int_lit;
+    NFloatLit    float_lit;
+    NStringLit   string_lit;
+    NIdentLit    ident_lit;
+    NArrayLit    array_lit;
+    NCompoundLit compound_lit;
 
     NRetStat    ret_stat;
     NVarStat    var_stat;

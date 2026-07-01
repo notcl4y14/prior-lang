@@ -60,14 +60,14 @@ void print_array_lit_tree(Node* node, int32_t indent);
  */
 Node parse_literal_term(Parser* parser);
 
+Node parse_array_lit(Parser* parser);
+
 Node parse_compound_literal(Parser* parser);
 
 /***
  * EXPRESSIONS
  */
 Node parse_expr(Parser* parser);
-
-Node parse_array_expr(Parser* parser);
 
 Node parse_assign_expr(Parser* parser);
 

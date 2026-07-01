@@ -67,6 +67,16 @@ Node parse_literal_term(Parser* parser) {
         if (parser->error) return (Node) { 0 };
 
         return expr;
+    } else if (token->type == TT_LBRACKET) {
+        Node array_lit = parse_array_lit(parser);
+        if (parser->error) return (Node) { 0 };
+
+        return array_lit;
+    } else if (token->type == TT_LBRACE) {
+        Node compound_lit = parse_compound_literal(parser);
+        if (parser->error) return (Node) { 0 };
+
+        return compound_lit;
     } else if (token->type  == TT_SEMICOLON) {
         /* Ignore semicolons */
         Node result = (Node) { .type = NT_NONE, {} };
@@ -124,6 +134,58 @@ Node parse_array_lit(Parser* parser) {
     };
 
     return array_node;
+
+    error:
+    free_node_arr(&node_array);
+    return (Node) { 0 };
+}
+
+/***
+ * { }
+ * { (expr) }
+ * { (expr), (expr), ... }
+ * { (member) = (expr) }
+ * { (member) = (expr), (expr), ... }
+ * { (expr), (member) = (expr), ... }
+ * { (member) = (expr), (member) = (expr), ... }
+ */
+Node parse_compound_literal(Parser* parser) {
+    const Token* starting_token = parser_advance(parser); // '{'
+    const Token* ending_token = NULL;
+
+    NodeArr node_array = create_node_arr(64);
+
+    while (true) {
+        if (parser_at(parser)->type == TT_RBRACE) {
+            ending_token = parser_advance(parser);
+            break;
+        }
+
+        Node expr = parse_expr(parser);
+        if (parser->error) goto error;
+
+        add_to_node_arr(&node_array, expr);
+
+        const Token* token = parser_at(parser);
+
+        if (token->type == TT_COMMA) {
+            parser_advance(parser);
+        } else if (token->type != TT_RBRACE) {
+            parser_set_error(parser, "Expected ','|'}'", token->left_pos);
+            goto error;
+        }
+    }
+
+    Node result = (Node) {
+        .type = NT_COMPOUND_LIT,
+        .data.compound_lit = (NCompoundLit) {
+            .values = node_array,
+        },
+        .left_pos = starting_token->left_pos,
+        .right_pos = ending_token->right_pos,
+    };
+
+    return result;
 
     error:
     free_node_arr(&node_array);
