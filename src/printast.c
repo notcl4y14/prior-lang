@@ -38,6 +38,7 @@ const PrintNodeTree_Func PrintNodeTree_Funcs[] = {
     [NT_STRING_LIT] = print_string_lit_tree,
     [NT_IDENT_LIT] = print_ident_lit_tree,
     [NT_ARRAY_LIT] = print_array_lit_tree,
+    [NT_COMPOUND_LIT] = print_compound_lit_tree,
 };
 
 void print_indent(int32_t indent) {
@@ -428,4 +429,13 @@ void print_array_lit_tree(Node* node, int32_t indent) {
     printf("ArrayLit:\n");
 
     print_node_array(&array_lit.values, indent + 1);
+}
+
+void print_compound_lit_tree(Node* node, int32_t indent) {
+    NCompoundLit compound_lit = node->data.compound_lit;
+
+    print_indent(indent);
+    printf("CompoundLit:\n");
+
+    print_node_array(&compound_lit.values, indent + 1);
 }

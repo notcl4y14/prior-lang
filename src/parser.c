@@ -40,11 +40,12 @@ const char* NodeTypeNames[] = {
     [NT_ARRAY_TYPE]  = "ArrayType",
     [NT_SWITCH_CASE] = "SwitchCase",
 
-    [NT_INTEGER_LIT] = "Integer",
-    [NT_FLOAT_LIT]   = "Float",
-    [NT_STRING_LIT]  = "String",
-    [NT_IDENT_LIT]   = "Ident",
-    [NT_ARRAY_LIT]   = "Array",
+    [NT_INTEGER_LIT]  = "Integer",
+    [NT_FLOAT_LIT]    = "Float",
+    [NT_STRING_LIT]   = "String",
+    [NT_IDENT_LIT]    = "Ident",
+    [NT_ARRAY_LIT]    = "Array",
+    [NT_COMPOUND_LIT] = "Compound",
 };
 
 

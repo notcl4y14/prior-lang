@@ -2,6 +2,7 @@
 #include "mem.h"
 #include "parser.h"
 #include "token.h"
+#include <assert.h>
 #include <ast.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -18,9 +19,10 @@ Node* new_node(const Node* node) {
  * LITERALS
  */
 Node parse_literal_term(Parser* parser) {
-    const Token* token = parser_advance(parser);
+    const Token* token = parser_at(parser);
 
     if (token->type == TT_INTEGER) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_INTEGER_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -30,6 +32,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_FLOAT) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_FLOAT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -39,6 +42,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_STRING) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_STRING_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -48,6 +52,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_IDENTIFIER) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_IDENT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -57,6 +62,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_LPAREN) {
+        parser_advance(parser);
         /***
          * This is the literal term expression I was talking about
          * in parse_cast_expr.
@@ -78,13 +84,18 @@ Node parse_literal_term(Parser* parser) {
 
         return compound_lit;
     } else if (token->type  == TT_SEMICOLON) {
+        parser_advance(parser);
         /* Ignore semicolons */
         Node result = (Node) { .type = NT_NONE, {} };
 
         return result;
     }
 
-    parser_set_error(parser, "Unexpected token", token->left_pos);
+    parser_advance(parser);
+
+    char errbuf[256] = { 0 };
+    sprintf(errbuf, "Unexpected token %s", TokenTypeNames[token->type]);
+    parser_set_error(parser, errbuf, token->left_pos);
     return (Node) { .type = NT_NONE, {} };
 }
 
@@ -117,7 +128,7 @@ Node parse_array_lit(Parser* parser) {
             parser_advance(parser); // ','
             continue;
         } else if (parser_at(parser)->type == TT_RBRACKET) {
-            parser_advance(parser); // ']'
+            ending_token = parser_advance(parser); // ']'
             break;
         } else {
             parser_set_error(parser, "Expected ',' or ']'", parser_at(parser)->left_pos);
@@ -160,6 +171,8 @@ Node parse_compound_literal(Parser* parser) {
             ending_token = parser_advance(parser);
             break;
         }
+
+        // printf("%s\n", TokenTypeNames[parser_at(parser)->type]);
 
         Node expr = parse_expr(parser);
         if (parser->error) goto error;

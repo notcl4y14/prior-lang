@@ -53,6 +53,7 @@ void print_float_lit_tree(Node* node, int32_t indent);
 void print_string_lit_tree(Node* node, int32_t indent);
 void print_ident_lit_tree(Node* node, int32_t indent);
 void print_array_lit_tree(Node* node, int32_t indent);
+void print_compound_lit_tree(Node* node, int32_t indent);
 
 
 /***
