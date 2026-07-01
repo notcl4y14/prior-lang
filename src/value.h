@@ -29,6 +29,9 @@ typedef struct Struct {
     size_t count;
 } Struct;
 
+Struct create_struct_value_data(size_t count);
+void free_struct_value_data(Struct* st);
+
 typedef struct Value {
     ValueType type;
     union {
@@ -46,6 +49,8 @@ typedef struct Value {
     } value;
 } Value;
 
+void value_to_zero(Value* value);
 ValueType get_value_type_from_string(const char* string);
 Value cast_value(Value value, ValueType cast_type);
+
 #endif
