@@ -63,6 +63,7 @@ Type create_struct_typedef(char* ident, TypeStructData struct_type);
 typedef struct TypeTable {
     char** types_idents;
     Type*  types_values;
+    size_t count;
 } TypeTable;
 
 /***
