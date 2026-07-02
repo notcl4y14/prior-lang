@@ -3,21 +3,7 @@
 
 #include "parser.h"
 #include <value.h>
-
-typedef struct Scope Scope;
-
-typedef struct Scope {
-    Scope* parent;
-    char* variables_k[256];
-    Value variables_v[256];
-    uint32_t varcount;
-} Scope;
-
-Scope create_scope(Scope* parent);
-void free_scope(Scope* scope);
-void scope_declare_var(Scope* scope, char* name);
-void scope_define_var(Scope* scope, char* name, Value value);
-Value scope_get_var(Scope* scope, char* name);
+#include "scope.h"
 
 typedef enum EvalBreakType {
     EBT_NONE,
@@ -32,11 +18,11 @@ typedef struct EvalResult {
 } EvalResult;
 
 typedef struct Interpreter {
-    Node  ast;
-    Scope scope;
+    Node   ast;
+    Scope* scope;
 } Interpreter;
 
-Interpreter create_interpreter(Node ast);
+Interpreter create_interpreter(Node ast, Scope* scope);
 void free_interpreter(Interpreter* interp);
 void run_interpreter(Interpreter* interp);
 

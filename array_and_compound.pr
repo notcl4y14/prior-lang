@@ -1,0 +1,11 @@
+[ x, y, z, ]
+[ x, y, z ]
+[]
+[ x ]
+// We need them as expressions, because these would be Blocks as statements
+expr = { x, y, z }
+expr = { x = 10, }
+expr = { vec.x = 1 }
+expr = { vex.x }
+expr = { }
+expr = { a = 1, b = 2, 3 }

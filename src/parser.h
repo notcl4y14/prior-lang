@@ -19,6 +19,7 @@ typedef enum NodeType {
     NT_RETURN_STAT,
     NT_BREAK_STAT,
     NT_CONTINUE_STAT,
+    NT_DEFER_STAT,
     NT_VAR_STAT,
     NT_ENUM_STAT,
     NT_STRUCT_STAT,
@@ -49,6 +50,7 @@ typedef enum NodeType {
     NT_STRING_LIT,
     NT_IDENT_LIT,
     NT_ARRAY_LIT,
+    NT_COMPOUND_LIT,
 } NodeType;
 
 extern const char* NodeTypeNames[];
@@ -102,11 +104,19 @@ typedef struct NArrayLit {
     NodeArr values;
 } NArrayLit;
 
+typedef struct NCompoundLit {
+    NodeArr values;
+} NCompoundLit;
+
 
 /* STATEMENTS */
 typedef struct NRetStat {
     Node* expr;
 } NRetStat;
+
+typedef struct NDeferStat {
+    Node* expr;
+} NDeferStat;
 
 typedef struct NVarStat {
     bool  constant;
@@ -231,13 +241,15 @@ typedef struct NCastExpr {
 typedef union NodeData {
     NProgram program;
 
-    NIntLit    int_lit;
-    NFloatLit  float_lit;
-    NStringLit string_lit;
-    NIdentLit  ident_lit;
-    NArrayLit  array_lit;
+    NIntLit      int_lit;
+    NFloatLit    float_lit;
+    NStringLit   string_lit;
+    NIdentLit    ident_lit;
+    NArrayLit    array_lit;
+    NCompoundLit compound_lit;
 
     NRetStat    ret_stat;
+    NDeferStat  defer_stat;
     NVarStat    var_stat;
     NEnumStat   enum_stat;
     NStructStat struct_stat;
@@ -283,6 +295,12 @@ typedef struct Parser {
     char errmsg[PARSER_ERROR_SIZE];
     bool error;
     TokenPosition errpos;
+
+    Node** allocations;
+    size_t allocation_count;
+
+    NodeArr* nodearr_allocations;
+    size_t   nodearr_allocation_count;
 } Parser;
 
 Parser create_parser(TokenArray token_array);

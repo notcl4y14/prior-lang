@@ -2,16 +2,27 @@ fn add(x: i64, y: i64): i64 {
     return (x + y);
 }
 
-// agugu
-// abakaer // doo doo
+struct MyStruct {
+  x: i32,
+  y: u32,
+  z: i8
+}
+
+struct Vector2f {
+    x: f64,
+    y: f64,
+}
+
+struct Entity {
+    id: u64,
+    position: Vector2f,
+}
+
 fn main(): i32 {
-/*
- laidosponoto
- tubalamus
- */
-    /***
-      * I am a multiline
-      * comment too.
-      */
-    return (u8) add((900), 10/*, (20)*/);
+    var x: i32 = 100;
+    defer x *= 2; // remove "defer" to get 210 instead of 220
+
+    x = add(x, 10);
+
+    return x;
 }

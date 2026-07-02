@@ -15,6 +15,7 @@ const char* NodeTypeNames[] = {
     [NT_RETURN_STAT]   = "ReturnStat",
     [NT_BREAK_STAT]    = "BreakStat",
     [NT_CONTINUE_STAT] = "ContinueStat",
+    [NT_DEFER_STAT]    = "DeferStat",
     [NT_VAR_STAT]      = "VarStat",
     [NT_ENUM_STAT]     = "EnumStat",
     [NT_STRUCT_STAT]   = "StructStat",
@@ -40,11 +41,12 @@ const char* NodeTypeNames[] = {
     [NT_ARRAY_TYPE]  = "ArrayType",
     [NT_SWITCH_CASE] = "SwitchCase",
 
-    [NT_INTEGER_LIT] = "Integer",
-    [NT_FLOAT_LIT]   = "Float",
-    [NT_STRING_LIT]  = "String",
-    [NT_IDENT_LIT]   = "Ident",
-    [NT_ARRAY_LIT]   = "Array",
+    [NT_INTEGER_LIT]  = "Integer",
+    [NT_FLOAT_LIT]    = "Float",
+    [NT_STRING_LIT]   = "String",
+    [NT_IDENT_LIT]    = "Ident",
+    [NT_ARRAY_LIT]    = "Array",
+    [NT_COMPOUND_LIT] = "Compound",
 };
 
 
@@ -84,10 +86,30 @@ Parser create_parser(TokenArray token_array) {
         .cursor = 0,
         .errmsg = { 0 },
         .error = false,
+        .allocations = calloc(512, sizeof(Node*)),
+        .allocation_count = 0,
+        .nodearr_allocations = calloc(512, sizeof(NodeArr)),
+        .nodearr_allocation_count = 0,
     };
 }
 
-void free_parser(Parser* parser) { }
+void free_parser(Parser* parser) {
+    for (int32_t i = 0; i < parser->allocation_count; ++i) {
+        Node* node = parser->allocations[i];
+        free(node);
+    }
+
+    free(parser->allocations);
+    parser->allocations = NULL;
+
+    for (int32_t i = 0; i < parser->nodearr_allocation_count; ++i) {
+        NodeArr* node_arr = &parser->nodearr_allocations[i];
+        free_node_arr(node_arr);
+    }
+
+    free(parser->nodearr_allocations);
+    parser->nodearr_allocations = NULL;
+}
 
 const Token* parser_at(Parser* parser) {
     return &parser->tokens.tokens[parser->cursor];
@@ -140,6 +162,7 @@ Node parse_tokens(Parser* parser) {
     Node ast = (Node) { .type = NT_PROGRAM };
 
     NodeArr node_array = create_node_arr(64);
+    parser->nodearr_allocations[parser->nodearr_allocation_count++] = node_array;
 
     while (parser->cursor < parser->tokens.count) {
         if (parser_at(parser)->type == TT_EOF) {

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <value.h>
 
@@ -18,7 +19,36 @@ const char* ValueTypeNames[] = {
     [VT_UINT64]  = "u64",
     [VT_FLOAT32] = "f32",
     [VT_FLOAT64] = "f64",
+    [VT_STRUCT]  = "struct",
 };
+
+Struct create_struct_value_data(size_t count) {
+    Struct st = (Struct) { 0 };
+
+    st.fields = calloc(count, sizeof(char*));
+    assert(st.fields != NULL);
+
+    st.values = calloc(count, sizeof(Value));
+    assert(st.values != NULL);
+
+    st.count = count;
+
+    return st;
+}
+
+void free_struct_value_data(Struct* st) {
+    free(st->values);
+    st->values = NULL;
+
+    free(st->fields);
+    st->fields = NULL;
+}
+
+
+
+void value_to_zero(Value* value) {
+    memset(&value->value, 0, sizeof(value->value));
+}
 
 ValueType get_value_type_from_string(const char* string) {
     ValueType type = VT_NONE;

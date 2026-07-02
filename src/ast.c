@@ -2,25 +2,38 @@
 #include "mem.h"
 #include "parser.h"
 #include "token.h"
+#include <assert.h>
 #include <ast.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-Node* new_node(const Node* node) {
+Node* new_node(Parser* parser, const Node* node) {
     Node* allocation = malloc(sizeof(Node));
     *allocation = *node;
+
+    parser->allocations[parser->allocation_count++] = allocation;
+
     return allocation;
+}
+
+NodeArr new_node_arr(Parser* parser, size_t capacity) {
+    NodeArr node_arr = create_node_arr(capacity);
+
+    parser->nodearr_allocations[parser->nodearr_allocation_count++] = node_arr;
+
+    return node_arr;
 }
 
 /***
  * LITERALS
  */
 Node parse_literal_term(Parser* parser) {
-    const Token* token = parser_advance(parser);
+    const Token* token = parser_at(parser);
 
     if (token->type == TT_INTEGER) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_INTEGER_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -30,6 +43,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_FLOAT) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_FLOAT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -39,6 +53,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_STRING) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_STRING_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -48,6 +63,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_IDENTIFIER) {
+        parser_advance(parser);
         Node node = (Node) { .type = NT_IDENT_LIT, {} };
         node.data.int_lit.value = str_alloc_copy(token->value);
         node.data.int_lit.size = (size_t) strlen(token->value) + 1;
@@ -57,6 +73,7 @@ Node parse_literal_term(Parser* parser) {
 
         return node;
     } else if (token->type == TT_LPAREN) {
+        parser_advance(parser);
         /***
          * This is the literal term expression I was talking about
          * in parse_cast_expr.
@@ -67,14 +84,29 @@ Node parse_literal_term(Parser* parser) {
         if (parser->error) return (Node) { 0 };
 
         return expr;
+    } else if (token->type == TT_LBRACKET) {
+        Node array_lit = parse_array_lit(parser);
+        if (parser->error) return (Node) { 0 };
+
+        return array_lit;
+    } else if (token->type == TT_LBRACE) {
+        Node compound_lit = parse_compound_literal(parser);
+        if (parser->error) return (Node) { 0 };
+
+        return compound_lit;
     } else if (token->type  == TT_SEMICOLON) {
+        parser_advance(parser);
         /* Ignore semicolons */
         Node result = (Node) { .type = NT_NONE, {} };
 
         return result;
     }
 
-    parser_set_error(parser, "Unexpected token", token->left_pos);
+    parser_advance(parser);
+
+    char errbuf[256] = { 0 };
+    sprintf(errbuf, "Unexpected token %s", TokenTypeNames[token->type]);
+    parser_set_error(parser, errbuf, token->left_pos);
     return (Node) { .type = NT_NONE, {} };
 }
 
@@ -88,7 +120,7 @@ Node parse_array_lit(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '['
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACKET) {
@@ -107,7 +139,7 @@ Node parse_array_lit(Parser* parser) {
             parser_advance(parser); // ','
             continue;
         } else if (parser_at(parser)->type == TT_RBRACKET) {
-            parser_advance(parser); // ']'
+            ending_token = parser_advance(parser); // ']'
             break;
         } else {
             parser_set_error(parser, "Expected ',' or ']'", parser_at(parser)->left_pos);
@@ -126,7 +158,61 @@ Node parse_array_lit(Parser* parser) {
     return array_node;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
+    return (Node) { 0 };
+}
+
+/***
+ * { }
+ * { (expr) }
+ * { (expr), (expr), ... }
+ * { (member) = (expr) }
+ * { (member) = (expr), (expr), ... }
+ * { (expr), (member) = (expr), ... }
+ * { (member) = (expr), (member) = (expr), ... }
+ */
+Node parse_compound_literal(Parser* parser) {
+    const Token* starting_token = parser_advance(parser); // '{'
+    const Token* ending_token = NULL;
+
+    NodeArr node_array = new_node_arr(parser, 64);
+
+    while (true) {
+        if (parser_at(parser)->type == TT_RBRACE) {
+            ending_token = parser_advance(parser);
+            break;
+        }
+
+        // printf("%s\n", TokenTypeNames[parser_at(parser)->type]);
+
+        Node expr = parse_expr(parser);
+        if (parser->error) goto error;
+
+        add_to_node_arr(&node_array, expr);
+
+        const Token* token = parser_at(parser);
+
+        if (token->type == TT_COMMA) {
+            parser_advance(parser);
+        } else if (token->type != TT_RBRACE) {
+            parser_set_error(parser, "Expected ','|'}'", token->left_pos);
+            goto error;
+        }
+    }
+
+    Node result = (Node) {
+        .type = NT_COMPOUND_LIT,
+        .data.compound_lit = (NCompoundLit) {
+            .values = node_array,
+        },
+        .left_pos = starting_token->left_pos,
+        .right_pos = ending_token->right_pos,
+    };
+
+    return result;
+
+    error:
+    // free_node_arr(&node_array);
     return (Node) { 0 };
 }
 
@@ -167,8 +253,8 @@ Node parse_assign_expr(Parser* parser) {
         .type = NT_ASSIGN_EXPR,
         .data.assign_expr = (NAssignExpr) {
             .op = op,
-            .ident = new_node(&left),
-            .value = new_node(&value),
+            .ident = new_node(parser, &left),
+            .value = new_node(parser, &value),
         },
         .left_pos = left.left_pos,
         .right_pos = value.right_pos,
@@ -216,8 +302,8 @@ Node parse_bin_comp_expr(Parser* parser) {
             .type = NT_BIN_EXPR,
             .data.bin_expr = (NBinExpr) {
                 .op = token->type,
-                .left = new_node(&left),
-                .right = new_node(&right),
+                .left = new_node(parser, &left),
+                .right = new_node(parser, &right),
             },
             .left_pos = left.left_pos,
             .right_pos = right.right_pos,
@@ -258,8 +344,8 @@ Node parse_bin_add_expr(Parser* parser) {
             .type = NT_BIN_EXPR,
             .data.bin_expr = (NBinExpr) {
                 .op = token->type,
-                .left = new_node(&left),
-                .right = new_node(&right),
+                .left = new_node(parser, &left),
+                .right = new_node(parser, &right),
             },
             .left_pos = left.left_pos,
             .right_pos = right.right_pos,
@@ -302,8 +388,8 @@ Node parse_bin_mul_expr(Parser* parser) {
             .type = NT_BIN_EXPR,
             .data.bin_expr = (NBinExpr) {
                 .op = token->type,
-                .left = new_node(&left),
-                .right = new_node(&right),
+                .left = new_node(parser, &left),
+                .right = new_node(parser, &right),
             },
             .left_pos = left.left_pos,
             .right_pos = right.right_pos,
@@ -340,7 +426,7 @@ Node parse_unary_expr(Parser* parser) {
         .type = NT_UN_EXPR,
         .data.un_expr = (NUnExpr) {
             .op = token->type,
-            .expr = new_node(&expr),
+            .expr = new_node(parser, &expr),
         },
         .left_pos = token->left_pos,
         .right_pos = expr.right_pos,
@@ -380,7 +466,7 @@ Node parse_update_expr(Parser* parser) {
             .data.update_expr = (NUpdateExpr) {
                 .prefixed = false,
                 .op = op->type,
-                .expr = new_node(&expr),
+                .expr = new_node(parser, &expr),
             },
             .left_pos = expr.left_pos,
             .right_pos = op->right_pos,
@@ -399,7 +485,7 @@ Node parse_update_expr(Parser* parser) {
             .data.update_expr = (NUpdateExpr) {
                 .prefixed = true,
                 .op = op->type,
-                .expr = new_node(&expr),
+                .expr = new_node(parser, &expr),
             },
             .left_pos = op->left_pos,
             .right_pos = expr.right_pos,
@@ -433,7 +519,7 @@ Node parse_call_expr(Parser* parser) {
         member = (Node) {
             .type = NT_CALL_EXPR,
             .data.call_expr = (NCallExpr) {
-                .member = new_node(&member),
+                .member = new_node(parser, &member),
                 .args = args,
             },
             .left_pos = member.left_pos,
@@ -474,8 +560,8 @@ Node parse_member_expr(Parser* parser) {
         object = (Node) {
             .type = NT_MEMBER_EXPR,
             .data.member_expr = (NMemberExpr) {
-                .object = new_node(&object),
-                .property = new_node(&property),
+                .object = new_node(parser, &object),
+                .property = new_node(parser, &property),
             },
             .left_pos = object.left_pos,
             .right_pos = property.right_pos,
@@ -539,8 +625,8 @@ Node parse_cast_expr(Parser* parser) {
     Node result = (Node) {
         .type = NT_CAST_EXPR,
         .data.cast_expr = (NCastExpr) {
-            .type = new_node(&type),
-            .expr = new_node(&expr),
+            .type = new_node(parser, &type),
+            .expr = new_node(parser, &expr),
         },
         .left_pos = starting_token->left_pos,
         .right_pos = expr.right_pos,
@@ -562,7 +648,7 @@ NodeArr parse_fields(Parser* parser) {
 
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         TokenType token_type = parser_at(parser)->type; // ','|'}'
@@ -592,8 +678,8 @@ NodeArr parse_fields(Parser* parser) {
         Node field_node = (Node) {
             .type = NT_FIELD,
             .data.field = (NField) {
-                .ident = new_node(&ident),
-                .type = new_node(&type),
+                .ident = new_node(parser, &ident),
+                .type = new_node(parser, &type),
             },
             .left_pos = ident.left_pos,
             .right_pos = type.right_pos,
@@ -614,7 +700,7 @@ NodeArr parse_fields(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -627,7 +713,7 @@ NodeArr parse_parameters(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         TokenType token_type = parser_at(parser)->type;
@@ -649,8 +735,8 @@ NodeArr parse_parameters(Parser* parser) {
         Node param_node = (Node) {
             .type = NT_PARAMETER,
             .data.parameter = (NParameter) {
-                .ident = new_node(&ident),
-                .type = new_node(&type),
+                .ident = new_node(parser, &ident),
+                .type = new_node(parser, &type),
                 .defval = NULL,
             },
             .left_pos = ident.left_pos,
@@ -677,7 +763,7 @@ NodeArr parse_parameters(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -692,7 +778,7 @@ NodeArr parse_enum_entries(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACE) {
@@ -728,8 +814,8 @@ NodeArr parse_enum_entries(Parser* parser) {
         Node entry_node = (Node) {
             .type = NT_ENUM_ENTRY,
             .data.enum_entry = (NEnumEntry) {
-                .ident = new_node(&ident),
-                .value = new_node(&value),
+                .ident = new_node(parser, &ident),
+                .value = new_node(parser, &value),
             },
             .left_pos = ident.left_pos,
             .right_pos = value.type == NT_NONE ? ident.right_pos : value.right_pos,
@@ -751,7 +837,7 @@ NodeArr parse_enum_entries(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -764,7 +850,7 @@ NodeArr parse_args(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         const Token* token = parser_at(parser);
@@ -783,7 +869,7 @@ NodeArr parse_args(Parser* parser) {
         Node arg_node = (Node) {
             .type = NT_ARGUMENT,
             .data.argument = (NArgument) {
-                .expr = new_node(&expr),
+                .expr = new_node(parser, &expr),
                 .ident = NULL,
             },
             .left_pos = expr.left_pos,
@@ -807,7 +893,7 @@ NodeArr parse_args(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -818,7 +904,7 @@ Node parse_block(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '{'
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (parser->cursor < parser->tokens.count) {
         if (parser_at(parser)->type == TT_RBRACE) {
@@ -856,7 +942,7 @@ Node parse_block(Parser* parser) {
     return result;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (Node) { 0 };
 }
 
@@ -920,8 +1006,8 @@ Node parse_array_type(Parser* parser) {
     Node result = (Node) {
         .type = NT_ARRAY_TYPE,
         .data.array_type = (NArrayType) {
-            .number = new_node(&number),
-            .type = new_node(&type),
+            .number = new_node(parser, &number),
+            .type = new_node(parser, &type),
         },
         .left_pos = starting_token->left_pos,
         .right_pos = type.right_pos,
@@ -953,7 +1039,7 @@ NodeArr parse_switch_block(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '{'
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     bool has_default = false;
 
@@ -978,8 +1064,8 @@ NodeArr parse_switch_block(Parser* parser) {
             Node switch_case = (Node) {
                 .type = NT_SWITCH_CASE,
                 .data.switch_case = (NSwitchCase) {
-                    .condition = new_node(&expr),
-                    .body = new_node(&block),
+                    .condition = new_node(parser, &expr),
+                    .body = new_node(parser, &block),
                 },
                 .left_pos = case_token->left_pos,
                 .right_pos = block.right_pos,
@@ -1005,7 +1091,7 @@ NodeArr parse_switch_block(Parser* parser) {
                 .type = NT_SWITCH_CASE,
                 .data.switch_case = (NSwitchCase) {
                     .condition = NULL,
-                    .body = new_node(&block),
+                    .body = new_node(parser, &block),
                 },
                 .left_pos = default_token->left_pos,
                 .right_pos = block.right_pos,
@@ -1021,7 +1107,7 @@ NodeArr parse_switch_block(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -1047,6 +1133,8 @@ Node parse_stat(Parser* parser) {
         return parse_struct_stat(parser);
     } else if (token->type == TT_VAR || token->type == TT_CONST) {
         return parse_var_stat(parser);
+    } else if (token->type == TT_DEFER) {
+        return parse_defer_stat(parser);
     } else if (token->type == TT_RETURN) {
         return parse_return_stat(parser);
     } else if (token->type == TT_BREAK) {
@@ -1079,7 +1167,7 @@ Node parse_stat(Parser* parser) {
  * return (value);
  */
 Node parse_return_stat(Parser* parser) {
-    const Token* return_token = parser_advance(parser); // `return`
+    const Token* return_token = parser_advance(parser); // 'return'
 
     // If the next token is a semicolon, the return value is NONE
     Node value = parse_expr(parser);
@@ -1088,10 +1176,37 @@ Node parse_return_stat(Parser* parser) {
     Node result = (Node) {
         .type = NT_RETURN_STAT,
         .data.ret_stat = (NRetStat) {
-            .expr = value.type == NT_NONE ? NULL : new_node(&value),
+            .expr = value.type == NT_NONE ? NULL : new_node(parser, &value),
         },
         .left_pos = return_token->left_pos,
         .right_pos = value.type == NT_NONE ? return_token->right_pos : value.right_pos,
+    };
+
+    return result;
+}
+
+/***
+ * defer (expr);
+ */
+Node parse_defer_stat(Parser* parser) {
+    const Token* defer_token = parser_advance(parser); // 'defer'
+
+    Node expr = parse_expr(parser);
+    if (parser->error) return (Node) { 0 };
+
+    if (expr.type == NT_NONE) {
+        /* Node NONE does not have positions, so we use defer_token->right_pos instead */
+        parser_set_error(parser, "Expected defer expression", defer_token->right_pos);
+        return (Node) { 0 };
+    }
+
+    Node result = (Node) {
+        .type = NT_DEFER_STAT,
+        .data.defer_stat = (NDeferStat) {
+            .expr = new_node(parser, &expr),
+        },
+        .left_pos = defer_token->left_pos,
+        .right_pos = defer_token->right_pos,
     };
 
     return result;
@@ -1134,9 +1249,9 @@ Node parse_var_stat(Parser* parser) {
         .type = NT_VAR_STAT,
         .data.var_stat = (NVarStat) {
             .constant = is_const,
-            .ident = new_node(&ident),
-            .type = new_node(&type),
-            .value = value.type == NT_NONE ? NULL : new_node(&value),
+            .ident = new_node(parser, &ident),
+            .type = new_node(parser, &type),
+            .value = value.type == NT_NONE ? NULL : new_node(parser, &value),
         },
         .left_pos = var_token->left_pos,
         .right_pos = value.type == NT_NONE ? type.right_pos : value.right_pos,
@@ -1171,7 +1286,7 @@ Node parse_enum_stat(Parser* parser) {
     Node enum_node = (Node) {
         .type = NT_ENUM_STAT,
         .data.enum_stat = (NEnumStat) {
-            .ident = new_node(&ident),
+            .ident = new_node(parser, &ident),
             .entries = entries,
         },
         .left_pos = starting_token->left_pos,
@@ -1209,7 +1324,7 @@ Node parse_struct_stat(Parser* parser) {
     Node result = (Node) {
         .type = NT_STRUCT_STAT,
         .data.struct_stat = (NStructStat) {
-            .ident = new_node(&ident),
+            .ident = new_node(parser, &ident),
             .fields = fields,
         },
         .left_pos = starting_token->left_pos,
@@ -1254,10 +1369,10 @@ Node parse_fn_stat(Parser* parser) {
     Node result = (Node) {
         .type = NT_FUNC_STAT,
         .data.func_stat = (NFuncStat) {
-            .ident = new_node(&ident),
+            .ident = new_node(parser, &ident),
             .params = params,
-            .type = new_node(&type),
-            .body = new_node(&block),
+            .type = new_node(parser, &type),
+            .body = new_node(parser, &block),
         },
         .left_pos = fn_token->left_pos,
         .right_pos = block.right_pos,
@@ -1308,9 +1423,9 @@ Node parse_if_stat(Parser* parser) {
     Node result = (Node) {
         .type = NT_IF_STAT,
         .data.if_stat = (NIfStat) {
-            .condition = new_node(&expr),
-            .body = new_node(&body),
-            .alternate = alternate.type == NT_NONE ? NULL : new_node(&alternate),
+            .condition = new_node(parser, &expr),
+            .body = new_node(parser, &body),
+            .alternate = alternate.type == NT_NONE ? NULL : new_node(parser, &alternate),
         },
         .left_pos = if_token->left_pos,
         .right_pos = alternate.type == NT_NONE ? body.right_pos : alternate.right_pos,
@@ -1350,8 +1465,8 @@ Node parse_while_stat(Parser* parser) {
     Node result = (Node) {
         .type = NT_WHILE_STAT,
         .data.while_stat = (NWhileStat) {
-            .condition = new_node(&expr),
-            .body = body.type == NT_NONE ? NULL : new_node(&body),
+            .condition = new_node(parser, &expr),
+            .body = body.type == NT_NONE ? NULL : new_node(parser, &body),
         },
         .left_pos = while_token->left_pos,
         .right_pos = body.right_pos,
@@ -1383,7 +1498,7 @@ Node parse_switch_stat(Parser* parser) {
     Node switch_node = (Node) {
         .type = NT_SWITCH_STAT,
         .data.switch_stat = (NSwitchStat) {
-            .lookup = new_node(&lookup),
+            .lookup = new_node(parser, &lookup),
             .cases = cases,
         },
         .left_pos = switch_token->left_pos,

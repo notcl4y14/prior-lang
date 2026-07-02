@@ -1,7 +1,10 @@
+#include "scope.h"
+#include "type.h"
 #include "value_types.h"
 #include <interp.h>
 #include <mem.h>
 #include <parser.h>
+#include <stddef.h>
 #include <token.h>
 #include <value.h>
 
@@ -10,62 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-Scope create_scope(Scope* parent) {
-    Scope scope = (Scope) { 0 };
-    scope.parent = parent;
-    return scope;
-}
-
-void free_scope(Scope* scope) {
-    for (int32_t i = 0; i < scope->varcount; ++i) {
-        if (scope->variables_k[i] != NULL) {
-            free(scope->variables_k[i]);
-        }
-    }
-}
-
-void scope_declare_var(Scope* scope, char* name) {
-    for (int32_t i = 0; i < 256; ++i) {
-        if (scope->variables_k[i] == NULL) {
-            scope->variables_k[i] = str_alloc_copy(name);
-            scope->varcount++;
-            return;
-        }
-    }
-
-    assert(false);
-}
-
-void scope_define_var(Scope* scope, char* name, Value value) {
-    for (int32_t i = 0; i < scope->varcount; ++i) {
-        if (strcmp(scope->variables_k[i], name) == 0) {
-            scope->variables_v[i] = value;
-            return;
-        }
-    }
-
-    if (scope->parent != NULL) {
-        return scope_define_var(scope->parent, name, value);
-    }
-
-    assert(false);
-}
-
-Value scope_get_var(Scope* scope, char* name) {
-    for (int32_t i = 0; i < scope->varcount; ++i) {
-        if (strcmp(scope->variables_k[i], name) == 0) {
-            return scope->variables_v[i];
-        }
-    }
-
-    if (scope->parent != NULL) {
-        return scope_get_var(scope->parent, name);
-    }
-
-    assert(false);
-    return (Value) { 0 };
-}
-
 
 
 EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node);
@@ -73,6 +20,12 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node);
 EvalResult evaluate_return_stat(Interpreter* interp, Scope* scope, Node* node) {
     NRetStat ret_stat = node->data.ret_stat;
     Value value = (Value) { 0 };
+
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
 
     if (ret_stat.expr->type != NT_NONE) {
         value = evaluate_node(interp, scope, ret_stat.expr).value;
@@ -86,6 +39,12 @@ EvalResult evaluate_return_stat(Interpreter* interp, Scope* scope, Node* node) {
 }
 
 EvalResult evaluate_break_stat(Interpreter* interp, Scope* scope, Node* node) {
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
+
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_BREAK,
@@ -93,24 +52,181 @@ EvalResult evaluate_break_stat(Interpreter* interp, Scope* scope, Node* node) {
 }
 
 EvalResult evaluate_continue_stat(Interpreter* interp, Scope* scope, Node* node) {
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
+
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_CONTINUE,
     };
 }
 
+EvalResult evaluate_defer_stat(Interpreter* interp, Scope* scope, Node* node) {
+    NDeferStat defer_stat = node->data.defer_stat;
+
+    scope_add_defer(scope, *defer_stat.expr);
+
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_NONE,
+    };
+}
+
+/***
+ * Separator
+ */
+
+/***
+ * Creates interface variables for the compound literal
+ * so that the struct instantiation would not have to rely
+ * on the AST.
+ *
+ * NCompoundLit* compound; // The compound literal data we're initializing off of
+ * const char*** comp_k;   // Pointer to compound keys array (identifiers)
+ * Node*** comp_v;         // Pointer to compound values array (ndoes)
+ * size_t* comp_c;         // Pointer to compound size variable
+ */
+void init_compound_vars(NCompoundLit* compound, const char*** comp_k, Node*** comp_v, size_t* comp_c) {
+    size_t compound_entry_amount = compound->values.count;
+    *comp_c = compound_entry_amount;
+
+    *comp_k = calloc(compound_entry_amount, sizeof(char**));
+    *comp_v = calloc(compound_entry_amount, sizeof(Node*));
+
+    for (int32_t i = 0; i < compound_entry_amount; ++i) {
+        const Node* assignment_node = &compound->values.nodes[i];
+
+        (*comp_k)[i] = assignment_node->data.assign_expr.ident->data.ident_lit.value;
+        (*comp_v)[i] = assignment_node->data.assign_expr.value;
+
+        // printf("%s\n", NodeTypeNames[(*comp_v)[i]->type]);
+    }
+}
+
+Value instantiate_struct
+   (Type st, TypeTable* tt, Scope* scope, Interpreter* interp,
+    const char** comp_k, Node** comp_v, size_t comp_c)
+{
+    /***
+     * st - Struct Type. A.K.A: Type definition of the Struct.
+     * sv - Struct Value. A.K.A: Runtime value of the struct.
+     */
+    Value sv = (Value) { .type = VT_STRUCT };
+
+    /* Initializing struct value data */
+    Struct* sv_data = &sv.value.struct_;
+    *sv_data = create_struct_value_data(st.data.data_struct.count);
+
+    /* Inserting compound values into the fields */
+    for (int32_t i = 0; i < st.data.data_struct.count; ++i) {
+        Type field_type = type_table_get_type(tt, st.data.data_struct.fields_types[i]);
+        ValueType field_value_type = get_typedef_value_type(field_type);
+        char* st_field_ident = st.data.data_struct.fields_names[i];
+
+        sv_data->fields[i] = st_field_ident;
+        sv_data->values[i].type = field_value_type;
+
+        const char* compound_field_ident = NULL;
+        Value       compound_field_value = (Value) { 0 };
+
+        /* Iterating through compound fields to search for the matching field */
+        for (int32_t j = 0; j < comp_c; ++j) {
+            /* Getting compound field's identifier */
+            compound_field_ident = comp_k[j];
+
+            /* Checking if the compound field matches with the struct field */
+            if (strcmp(st_field_ident, compound_field_ident) == 0) {
+                /* Evaluating the compound value */
+                compound_field_value = evaluate_node(interp, scope, comp_v[j]).value;
+
+                break;
+            }
+        }
+
+        /* If the matching struct field has NOT been found in the compound */
+        if (compound_field_value.type == VT_NONE) {
+            compound_field_value.type = field_value_type;
+            value_to_zero(&compound_field_value); /* We zero it out */
+        }
+
+        /* Auto-cast */
+        if (compound_field_value.type != sv_data->values[i].type) {
+            compound_field_value = cast_value(compound_field_value, sv_data->values[i].type);
+        }
+
+        /* Assigning the compound field to the struct instance field */
+        sv_data->values[i].value = compound_field_value.value;
+    }
+
+    return sv;
+}
+
+/***
+ * Separator
+ */
+
 EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
-    char* name = var_stat.ident->data.ident_lit.value;
+    char* ident_name = var_stat.ident->data.ident_lit.value;
+    char* type_name = var_stat.type->data.ident_lit.value;
 
-    scope_declare_var(scope, name);
+    Type type = type_table_get_type(&interp->scope->type_table, type_name);
 
-    if (var_stat.value->type != NT_NONE) {
-        Value value = evaluate_node(interp, scope, var_stat.value).value;
-        // value = cast_value(value, var_stat.return_type);
+    scope_declare_var(scope, ident_name, type);
 
-        scope_define_var(scope, name, value);
+    /* Yes value, evaluating */
+    if (var_stat.value != NULL) {
+        Value value = (Value) { 0 };
+
+        switch (type.type) {
+            case TYPE_TYPE_STRUCT: {
+                assert(var_stat.value->type == NT_COMPOUND_LIT);
+
+                const char** comp_k = NULL;
+                Node** comp_v = NULL;
+                size_t comp_c = 0;
+                init_compound_vars(&var_stat.value->data.compound_lit, &comp_k, &comp_v, &comp_c);
+
+                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, comp_k, comp_v, comp_c);
+
+                free(comp_v);
+                comp_v = NULL;
+
+                free(comp_k);
+                comp_k = NULL;
+            } break;
+
+            default:
+                value = evaluate_node(interp, scope, var_stat.value).value;
+                break;
+        }
+
+        scope_define_var(scope, ident_name, value);
+    }
+    /* No value, zeroing out */
+    else {
+        Value value = (Value) { 0 };
+
+        switch (type.type) {
+            case TYPE_TYPE_STRUCT:
+                /***
+                 * A little trick: We're telling the struct instantiator that
+                 * the amount of compound entries is zero and it's going to
+                 * zero out each entry evaluation.
+                 */
+                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, NULL, NULL, 0);
+                break;
+
+            default:
+                value = evaluate_node(interp, scope, var_stat.value).value;
+                break;
+        }
+
+        scope_define_var(scope, ident_name, value);
     }
 
     return (EvalResult) {
@@ -123,14 +239,15 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
     NFuncStat func_stat = node->data.func_stat;
 
     char* name = func_stat.ident->data.ident_lit.value;
-    char* type = func_stat.type->data.ident_lit.value;
+    char* type_name = func_stat.type->data.ident_lit.value;
+    Type type = type_table_get_type(&scope->type_table, type_name);
 
-    scope_declare_var(scope, name);
+    scope_declare_var(scope, name, type);
 
     ValueFunction fn_value = (ValueFunction) {
         .params = { {} },
         .node = func_stat.body,
-        .return_type = get_value_type_from_string(type),
+        .return_type = type,
     };
 
     NodeArr* params = &func_stat.params;
@@ -139,8 +256,8 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
         Node* param = &params->nodes[i];
 
         char* param_name = param->data.parameter.ident->data.ident_lit.value;
-        // TODO: Handle array types, but when custom types are implemented
-        ValueType param_type = get_value_type_from_string(param->data.parameter.type->data.ident_lit.value);
+        // TODO: Handle array types
+        Type param_type = type_table_get_type(&scope->type_table, param->data.parameter.type->data.ident_lit.value);
 
         fn_value.params[i] = (ValueFunctionParam) {
             .name = param_name,
@@ -221,6 +338,14 @@ EvalResult evaluate_block(Interpreter* interp, Scope* scope, Node* node) {
         if (last_result.break_type == EBT_RETURN) {
             break;
         }
+    }
+
+    /* Evaluating defers */
+    if (!sub_scope.is_deferred) {
+        for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+            evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+        }
+        sub_scope.is_deferred = true;
     }
 
     free_scope(&sub_scope);
@@ -640,7 +765,7 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
 
         ValueFunctionParam* param_list = (ValueFunctionParam*) fn_value->params;
 
-        Scope sub_scope = create_scope(&interp->scope);
+        Scope sub_scope = create_scope(interp->scope);
 
         // Defining parameter values with arguments
         for (int32_t i = 0; i < arg_array.count; ++i) {
@@ -648,7 +773,7 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
             Value arg_value = evaluate_node(interp, &sub_scope, argument.expr).value;
             ValueFunctionParam param = param_list[i];
 
-            scope_declare_var(&sub_scope, param.name);
+            scope_declare_var(&sub_scope, param.name, param.type);
             scope_define_var(&sub_scope, param.name, arg_value);
         }
 
@@ -660,6 +785,14 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
             if (last_result.break_type == EBT_RETURN) {
                 break;
             }
+        }
+
+        /* Evaluating defers */
+        if (!sub_scope.is_deferred) {
+            for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+                evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+            }
+            sub_scope.is_deferred = true;
         }
 
         free_scope(&sub_scope);
@@ -685,6 +818,27 @@ EvalResult evaluate_cast_expr(Interpreter* interp, Scope* scope, Node* node) {
     Value result = cast_value(value, cast_type);
 
     return (EvalResult) { .value = result, .break_type = EBT_NONE };
+}
+
+EvalResult evaluate_struct_stat(Interpreter* interp, Scope* scope, Node* node) {
+    /***
+     * We don't need to evaluate struct statements, they are already
+     * handled by the Semantics Processing. What we need to evaluate
+     * is struct instance creations.
+     */
+    // const uint32_t index = interp->scope.structcount++;
+    // NodeArr fields = node->data.struct_stat.fields;
+
+    // Struct struct_;
+    // struct_.count = fields.count;
+    // struct_.entries = malloc(sizeof(*struct_.entries) * struct_.count);
+    // struct_.values = malloc(sizeof(*struct_.values) * struct_.count);
+
+    // for (size_t i = 0; i < fields.count; i++) {
+    //     struct_.entries[i] = str_alloc_copy(fields.nodes[i].data.field.ident->data.ident_lit.value);
+    //     // TODO: add the values
+    // }
+    return (EvalResult) { 0 };
 }
 
 EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
@@ -720,6 +874,7 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_RETURN_STAT:   return evaluate_return_stat(interp, scope, node);
         case NT_BREAK_STAT:    return evaluate_break_stat(interp, scope, node);
         case NT_CONTINUE_STAT: return evaluate_continue_stat(interp, scope, node);
+        case NT_DEFER_STAT:    return evaluate_defer_stat(interp, scope, node);
         case NT_VAR_STAT:      return evaluate_var_stat(interp, scope, node);
         case NT_FUNC_STAT:     return evaluate_fn_stat(interp, scope, node);
         case NT_IF_STAT:       return evaluate_if_stat(interp, scope, node);
@@ -732,6 +887,7 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_ASSIGN_EXPR: return evaluate_assign_expr(interp, scope, node);
         case NT_CALL_EXPR:   return evaluate_call_expr(interp, scope, node);
         case NT_CAST_EXPR:   return evaluate_cast_expr(interp, scope, node);
+        case NT_STRUCT_STAT: return evaluate_struct_stat(interp, scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node->type]);
@@ -742,32 +898,34 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
 
 
 
-Interpreter create_interpreter(Node ast) {
+Interpreter create_interpreter(Node ast, Scope* scope) {
     Interpreter interp = (Interpreter) {
         .ast = ast,
-        .scope = create_scope(NULL),
+        .scope = scope,
     };
 
     return interp;
 }
 
 void free_interpreter(Interpreter* interp) {
-    free_scope(&interp->scope);
+    // TODO: Free system
 }
 
 void run_interpreter(Interpreter* interp) {
     NProgram program = interp->ast.data.program;
 
     for (int32_t i = 0; i < program.nodes.count; ++i) {
-        evaluate_node(interp, &interp->scope, &program.nodes.nodes[i]);
+        evaluate_node(interp, interp->scope, &program.nodes.nodes[i]);
     }
 
-    Value main_fn_ptr = scope_get_var(&interp->scope, "main");
+    Value main_fn_ptr = scope_get_var(interp->scope, "main");
     ValueFunction* main_fn_value = (ValueFunction*) main_fn_ptr.value.u64;
     NBlock fn_block = main_fn_value->node->data.block;
 
+    // Scope sub_scope = create_scope(&interp->scope);
+
     for (int32_t i = 0; i < fn_block.nodes.count; ++i) {
-        EvalResult result = evaluate_node(interp, &interp->scope, &fn_block.nodes.nodes[i]);
+        EvalResult result = evaluate_node(interp, interp->scope, &fn_block.nodes.nodes[i]);
         Value value = result.value;
 
         printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
@@ -826,4 +984,14 @@ void run_interpreter(Interpreter* interp) {
             break;
         }
     }
+
+    /* Evaluating defers */
+    // if (!sub_scope.is_deferred) {
+    //     for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+    //         evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+    //     }
+    //     sub_scope.is_deferred = true;
+    // }
+
+    // free_scope(&sub_scope);
 }

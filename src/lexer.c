@@ -66,6 +66,7 @@ const char* TokenTypeNames[] = {
     [TT_STRUCT]   = "STRUCT",
     [TT_VAR]      = "VAR",
     [TT_CONST]    = "CONST",
+    [TT_DEFER]    = "DEFER",
     [TT_BREAK]    = "BREAK",
     [TT_CONTINUE] = "CONTINUE",
     [TT_RETURN]   = "RETURN",
@@ -428,6 +429,9 @@ Token lexer_tokenize_ident(Lexer* lexer) {
         return token;
     } else if (strcmp(strbuf, "const") == 0) {
         token.type = TT_CONST;
+        return token;
+    } else if (strcmp(strbuf, "defer") == 0) {
+        token.type = TT_DEFER;
         return token;
     } else if (strcmp(strbuf, "break") == 0) {
         token.type = TT_BREAK;
