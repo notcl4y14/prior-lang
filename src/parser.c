@@ -88,6 +88,8 @@ Parser create_parser(TokenArray token_array) {
         .error = false,
         .allocations = calloc(512, sizeof(Node*)),
         .allocation_count = 0,
+        .nodearr_allocations = calloc(512, sizeof(NodeArr)),
+        .nodearr_allocation_count = 0,
     };
 }
 
@@ -95,6 +97,11 @@ void free_parser(Parser* parser) {
     for (int32_t i = 0; i < parser->allocation_count; ++i) {
         Node* node = parser->allocations[i];
         free(node);
+    }
+
+    for (int32_t i = 0; i < parser->nodearr_allocation_count; ++i) {
+        NodeArr* node_arr = &parser->nodearr_allocations[i];
+        free_node_arr(node_arr);
     }
 }
 

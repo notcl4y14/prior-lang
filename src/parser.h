@@ -298,6 +298,9 @@ typedef struct Parser {
 
     Node** allocations;
     size_t allocation_count;
+
+    NodeArr* nodearr_allocations;
+    size_t   nodearr_allocation_count;
 } Parser;
 
 Parser create_parser(TokenArray token_array);

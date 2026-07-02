@@ -18,6 +18,14 @@ Node* new_node(Parser* parser, const Node* node) {
     return allocation;
 }
 
+NodeArr new_node_arr(Parser* parser, size_t capacity) {
+    NodeArr node_arr = create_node_arr(capacity);
+
+    parser->nodearr_allocations[parser->nodearr_allocation_count++] = node_arr;
+
+    return node_arr;
+}
+
 /***
  * LITERALS
  */
@@ -112,7 +120,7 @@ Node parse_array_lit(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '['
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACKET) {
@@ -150,7 +158,7 @@ Node parse_array_lit(Parser* parser) {
     return array_node;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (Node) { 0 };
 }
 
@@ -167,7 +175,7 @@ Node parse_compound_literal(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '{'
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACE) {
@@ -204,7 +212,7 @@ Node parse_compound_literal(Parser* parser) {
     return result;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (Node) { 0 };
 }
 
@@ -640,7 +648,7 @@ NodeArr parse_fields(Parser* parser) {
 
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         TokenType token_type = parser_at(parser)->type; // ','|'}'
@@ -692,7 +700,7 @@ NodeArr parse_fields(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -705,7 +713,7 @@ NodeArr parse_parameters(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         TokenType token_type = parser_at(parser)->type;
@@ -755,7 +763,7 @@ NodeArr parse_parameters(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -770,7 +778,7 @@ NodeArr parse_enum_entries(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         if (parser_at(parser)->type == TT_RBRACE) {
@@ -829,7 +837,7 @@ NodeArr parse_enum_entries(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -842,7 +850,7 @@ NodeArr parse_args(Parser* parser) {
     const Token* ending_token = NULL;
     if (parser->error) return (NodeArr) { 0 }; // We have not allocated anything yet, returning instantly
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (true) {
         const Token* token = parser_at(parser);
@@ -885,7 +893,7 @@ NodeArr parse_args(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
@@ -896,7 +904,7 @@ Node parse_block(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '{'
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     while (parser->cursor < parser->tokens.count) {
         if (parser_at(parser)->type == TT_RBRACE) {
@@ -934,7 +942,7 @@ Node parse_block(Parser* parser) {
     return result;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (Node) { 0 };
 }
 
@@ -1031,7 +1039,7 @@ NodeArr parse_switch_block(Parser* parser) {
     const Token* starting_token = parser_advance(parser); // '{'
     const Token* ending_token = NULL;
 
-    NodeArr node_array = create_node_arr(64);
+    NodeArr node_array = new_node_arr(parser, 64);
 
     bool has_default = false;
 
@@ -1099,7 +1107,7 @@ NodeArr parse_switch_block(Parser* parser) {
     return node_array;
 
     error:
-    free_node_arr(&node_array);
+    // free_node_arr(&node_array);
     return (NodeArr) { 0 };
 }
 
