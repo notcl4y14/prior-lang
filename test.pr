@@ -30,5 +30,6 @@ fn main(): i32 {
       * comment too.
       */
     var my_struct: MyStruct = { x = 10, y = 10, z = 100 };
+    var empty_struct: Vector2f;
     return (u8) add((900), 10/*, (20)*/);
 }
