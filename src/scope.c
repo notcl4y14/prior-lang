@@ -21,6 +21,8 @@ void free_scope(Scope* scope) {
             free(scope->variables_k[i]);
         }
     }
+
+    free_type_table(&scope->type_table);
 }
 
 void scope_declare_var(Scope* scope, char* name, Type type) {

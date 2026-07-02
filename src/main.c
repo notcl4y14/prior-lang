@@ -277,6 +277,7 @@ void interpret(int32_t argc, char* argv[]) {
     if (semantics.error) {
         printf("%s\n", get_semantics_error(&semantics));
 
+        free_scope(&scope);
         free_parser(&parser);
         free_token_array(&token_array);
         free_lexer(&lexer);
@@ -296,6 +297,7 @@ void interpret(int32_t argc, char* argv[]) {
     run_interpreter(&interp);
 
     free_interpreter(&interp);
+    free_scope(&scope);
     free_parser(&parser);
     free_token_array(&token_array);
     free_lexer(&lexer);

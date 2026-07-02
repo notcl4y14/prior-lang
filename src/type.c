@@ -86,6 +86,14 @@ TypeTable create_type_table() {
 }
 
 void free_type_table(TypeTable* tt) {
+    for (int32_t i = 0; i < tt->count; ++i) {
+        Type* type = &tt->types_values[i];
+
+        if (type->type == TYPE_TYPE_STRUCT) {
+            free_type_struct_data(&type->data.data_struct);
+        }
+    }
+
     free(tt->types_values);
     tt->types_values = NULL;
 

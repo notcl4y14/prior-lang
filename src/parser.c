@@ -99,10 +99,16 @@ void free_parser(Parser* parser) {
         free(node);
     }
 
+    free(parser->allocations);
+    parser->allocations = NULL;
+
     for (int32_t i = 0; i < parser->nodearr_allocation_count; ++i) {
         NodeArr* node_arr = &parser->nodearr_allocations[i];
         free_node_arr(node_arr);
     }
+
+    free(parser->nodearr_allocations);
+    parser->nodearr_allocations = NULL;
 }
 
 const Token* parser_at(Parser* parser) {
@@ -156,6 +162,7 @@ Node parse_tokens(Parser* parser) {
     Node ast = (Node) { .type = NT_PROGRAM };
 
     NodeArr node_array = create_node_arr(64);
+    parser->nodearr_allocations[parser->nodearr_allocation_count++] = node_array;
 
     while (parser->cursor < parser->tokens.count) {
         if (parser_at(parser)->type == TT_EOF) {
