@@ -86,10 +86,17 @@ Parser create_parser(TokenArray token_array) {
         .cursor = 0,
         .errmsg = { 0 },
         .error = false,
+        .allocations = calloc(512, sizeof(Node*)),
+        .allocation_count = 0,
     };
 }
 
-void free_parser(Parser* parser) { }
+void free_parser(Parser* parser) {
+    for (int32_t i = 0; i < parser->allocation_count; ++i) {
+        Node* node = parser->allocations[i];
+        free(node);
+    }
+}
 
 const Token* parser_at(Parser* parser) {
     return &parser->tokens.tokens[parser->cursor];

@@ -18,13 +18,14 @@
   - [x] Implement positions for nodes
   - [x] Implement casts
   - [x] Implement comments (Kinda not)
-- [ ] Parser
-  - [ ] Create a free system for node tree
+- [x] Parser
+  - [x] Create a free system for node tree
     - Either by following the tree freeing every node
     - Or by allocating an array that records every AST allocation to free later
 - [ ] Semantics
   - [x] Implement error system
   - [ ] Implement MULTIPLE ERRORS system
+  - [ ] Implement node positions into errors
   - [ ] Implement auto-cast
   - [x] Type Table
     - [x] Custom types

@@ -295,6 +295,9 @@ typedef struct Parser {
     char errmsg[PARSER_ERROR_SIZE];
     bool error;
     TokenPosition errpos;
+
+    Node** allocations;
+    size_t allocation_count;
 } Parser;
 
 Parser create_parser(TokenArray token_array);
