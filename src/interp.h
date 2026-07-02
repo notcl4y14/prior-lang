@@ -18,11 +18,11 @@ typedef struct EvalResult {
 } EvalResult;
 
 typedef struct Interpreter {
-    Node  ast;
-    Scope scope;
+    Node   ast;
+    Scope* scope;
 } Interpreter;
 
-Interpreter create_interpreter(Node ast);
+Interpreter create_interpreter(Node ast, Scope* scope);
 void free_interpreter(Interpreter* interp);
 void run_interpreter(Interpreter* interp);
 

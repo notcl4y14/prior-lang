@@ -174,7 +174,7 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     char* ident_name = var_stat.ident->data.ident_lit.value;
     char* type_name = var_stat.type->data.ident_lit.value;
 
-    Type type = type_table_get_type(&interp->scope.type_table, type_name);
+    Type type = type_table_get_type(&interp->scope->type_table, type_name);
 
     scope_declare_var(scope, ident_name, type);
 
@@ -191,7 +191,7 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
                 size_t comp_c = 0;
                 init_compound_vars(&var_stat.value->data.compound_lit, &comp_k, &comp_v, &comp_c);
 
-                value = instantiate_struct(type, &interp->scope.type_table, scope, interp, comp_k, comp_v, comp_c);
+                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, comp_k, comp_v, comp_c);
 
                 free(comp_v);
                 comp_v = NULL;
@@ -218,7 +218,7 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
                  * the amount of compound entries is zero and it's going to
                  * zero out each entry evaluation.
                  */
-                value = instantiate_struct(type, &interp->scope.type_table, scope, interp, NULL, NULL, 0);
+                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, NULL, NULL, 0);
                 break;
 
             default:
@@ -765,7 +765,7 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
 
         ValueFunctionParam* param_list = (ValueFunctionParam*) fn_value->params;
 
-        Scope sub_scope = create_scope(&interp->scope);
+        Scope sub_scope = create_scope(interp->scope);
 
         // Defining parameter values with arguments
         for (int32_t i = 0; i < arg_array.count; ++i) {
@@ -898,34 +898,34 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
 
 
 
-Interpreter create_interpreter(Node ast) {
+Interpreter create_interpreter(Node ast, Scope* scope) {
     Interpreter interp = (Interpreter) {
         .ast = ast,
-        .scope = create_scope(NULL),
+        .scope = scope,
     };
 
     return interp;
 }
 
 void free_interpreter(Interpreter* interp) {
-    free_scope(&interp->scope);
+    // TODO: Free system
 }
 
 void run_interpreter(Interpreter* interp) {
     NProgram program = interp->ast.data.program;
 
     for (int32_t i = 0; i < program.nodes.count; ++i) {
-        evaluate_node(interp, &interp->scope, &program.nodes.nodes[i]);
+        evaluate_node(interp, interp->scope, &program.nodes.nodes[i]);
     }
 
-    Value main_fn_ptr = scope_get_var(&interp->scope, "main");
+    Value main_fn_ptr = scope_get_var(interp->scope, "main");
     ValueFunction* main_fn_value = (ValueFunction*) main_fn_ptr.value.u64;
     NBlock fn_block = main_fn_value->node->data.block;
 
     // Scope sub_scope = create_scope(&interp->scope);
 
     for (int32_t i = 0; i < fn_block.nodes.count; ++i) {
-        EvalResult result = evaluate_node(interp, &interp->scope, &fn_block.nodes.nodes[i]);
+        EvalResult result = evaluate_node(interp, interp->scope, &fn_block.nodes.nodes[i]);
         Value value = result.value;
 
         printf("Last evaluation: %s: ", ValueTypeNames[value.type]);
