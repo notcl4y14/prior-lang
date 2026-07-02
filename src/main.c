@@ -19,6 +19,7 @@
 bool show_stages = false;
 bool show_tokens = false;
 bool show_ast = false;
+bool show_semantics = false;
 bool show_bytecode = false;
 bool no_semantics = false;
 
@@ -50,11 +51,13 @@ void usage() {
     printf("        --p-stages - Print the stages of the compiling process\n");
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
+    printf("        --p-semantics - Print the Semantics result of the AST\n");
     printf("        --no-semantics - Disable semantics (type checking)\n");
     printf("    interpret <file> - Interpret and run the file\n");
     printf("        --p-stages - Print the stages of the compiling process\n");
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
+    printf("        --p-semantics - Print the Semantics result of the AST\n");
 }
 
 void compile(int32_t argc, char* argv[]) {
@@ -180,6 +183,7 @@ void interpret(int32_t argc, char* argv[]) {
     show_stages = args_contains(argc, argv, "--p-stages");
     show_tokens = args_contains(argc, argv, "--p-tokens");
     show_ast = args_contains(argc, argv, "--p-ast");
+    show_semantics = args_contains(argc, argv, "--p-semantics");
 
     /* Lexer Stage */
     char* filename = argv[2];
@@ -269,8 +273,10 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
-    printf("===== SEMANTICS ====\n");
-    print_scope_structs(semantics.scope);
+    if (show_semantics) {
+        printf("\n===== SEMANTICS ====\n");
+        print_scope_structs(semantics.scope);
+    }
 
     // Preloading
     scope_declare_var(&interp.scope, "false");
