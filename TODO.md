@@ -28,7 +28,7 @@
   - [ ] Implement auto-cast
   - [x] Type Table
     - [x] Custom types
-  - [ ] Scoping
+  - [x] Scoping
   - [ ] Let the semantics system declare global variables and declarations instead of the interpreter
 - [ ] Interpterer
   - [ ] Implement error system

@@ -176,7 +176,7 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
 
     Type type = type_table_get_type(&interp->scope.type_table, type_name);
 
-    scope_declare_var(scope, ident_name);
+    scope_declare_var(scope, ident_name, type);
 
     /* Yes value, evaluating */
     if (var_stat.value != NULL) {
@@ -239,14 +239,15 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
     NFuncStat func_stat = node->data.func_stat;
 
     char* name = func_stat.ident->data.ident_lit.value;
-    char* type = func_stat.type->data.ident_lit.value;
+    char* type_name = func_stat.type->data.ident_lit.value;
+    Type type = type_table_get_type(&scope->type_table, type_name);
 
-    scope_declare_var(scope, name);
+    scope_declare_var(scope, name, type);
 
     ValueFunction fn_value = (ValueFunction) {
         .params = { {} },
         .node = func_stat.body,
-        .return_type = get_value_type_from_string(type),
+        .return_type = type,
     };
 
     NodeArr* params = &func_stat.params;
@@ -255,8 +256,8 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
         Node* param = &params->nodes[i];
 
         char* param_name = param->data.parameter.ident->data.ident_lit.value;
-        // TODO: Handle array types, but when custom types are implemented
-        ValueType param_type = get_value_type_from_string(param->data.parameter.type->data.ident_lit.value);
+        // TODO: Handle array types
+        Type param_type = type_table_get_type(&scope->type_table, param->data.parameter.type->data.ident_lit.value);
 
         fn_value.params[i] = (ValueFunctionParam) {
             .name = param_name,
@@ -772,7 +773,7 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
             Value arg_value = evaluate_node(interp, &sub_scope, argument.expr).value;
             ValueFunctionParam param = param_list[i];
 
-            scope_declare_var(&sub_scope, param.name);
+            scope_declare_var(&sub_scope, param.name, param.type);
             scope_define_var(&sub_scope, param.name, arg_value);
         }
 

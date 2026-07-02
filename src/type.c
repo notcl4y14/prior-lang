@@ -3,6 +3,7 @@
 #include "value.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -102,8 +103,10 @@ void type_table_assign_type(TypeTable* tt, const char* ident, Type type) {
 Type type_table_get_type(TypeTable* tt, const char* ident) {
     for (int32_t i = 0; i < tt->count; ++i) {
         const char* type_ident = tt->types_idents[i];
+        // printf("search %s == %s\n", ident, type_ident);
 
         if (strcmp(type_ident, ident) == 0) {
+            // printf("Found!\n");
             const Type type = tt->types_values[i];
 
             /* Find the source of alias */

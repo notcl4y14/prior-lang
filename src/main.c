@@ -249,16 +249,27 @@ void interpret(int32_t argc, char* argv[]) {
     Semantics semantics = create_semantics(&interp.scope);
 
     /* Assigning core types */
-    type_table_assign_type( &interp.scope.type_table, "i8",  create_value_typedef(VT_INT8)    );
-    type_table_assign_type( &interp.scope.type_table, "i16", create_value_typedef(VT_INT16)   );
-    type_table_assign_type( &interp.scope.type_table, "i32", create_value_typedef(VT_INT32)   );
-    type_table_assign_type( &interp.scope.type_table, "i64", create_value_typedef(VT_INT64)   );
-    type_table_assign_type( &interp.scope.type_table, "u8",  create_value_typedef(VT_UINT8)   );
-    type_table_assign_type( &interp.scope.type_table, "u16", create_value_typedef(VT_UINT16)  );
-    type_table_assign_type( &interp.scope.type_table, "u32", create_value_typedef(VT_UINT32)  );
-    type_table_assign_type( &interp.scope.type_table, "u64", create_value_typedef(VT_UINT64)  );
-    type_table_assign_type( &interp.scope.type_table, "f32", create_value_typedef(VT_FLOAT32) );
-    type_table_assign_type( &interp.scope.type_table, "f64", create_value_typedef(VT_FLOAT64) );
+    type_table_assign_type( &interp.scope.type_table, "i8",   create_value_typedef(VT_INT8)    );
+    type_table_assign_type( &interp.scope.type_table, "i16",  create_value_typedef(VT_INT16)   );
+    type_table_assign_type( &interp.scope.type_table, "i32",  create_value_typedef(VT_INT32)   );
+    type_table_assign_type( &interp.scope.type_table, "i64",  create_value_typedef(VT_INT64)   );
+    type_table_assign_type( &interp.scope.type_table, "u8",   create_value_typedef(VT_UINT8)   );
+    type_table_assign_type( &interp.scope.type_table, "u16",  create_value_typedef(VT_UINT16)  );
+    type_table_assign_type( &interp.scope.type_table, "u32",  create_value_typedef(VT_UINT32)  );
+    type_table_assign_type( &interp.scope.type_table, "u64",  create_value_typedef(VT_UINT64)  );
+    type_table_assign_type( &interp.scope.type_table, "f32",  create_value_typedef(VT_FLOAT32) );
+    type_table_assign_type( &interp.scope.type_table, "f64",  create_value_typedef(VT_FLOAT64) );
+    type_table_assign_type( &interp.scope.type_table, "bool", create_alias_typedef("u8")       );
+
+    // Preloading
+    scope_declare_var(&interp.scope, "null", create_value_typedef(VT_UINT8));
+    scope_define_var(&interp.scope, "null", (Value) { .type = VT_UINT8, .value.u8 = 0 });
+
+    scope_declare_var(&interp.scope, "false", create_value_typedef(VT_UINT8));
+    scope_define_var(&interp.scope, "false", (Value) { .type = VT_UINT8, .value.u8 = 0 });
+
+    scope_declare_var(&interp.scope, "true", create_value_typedef(VT_UINT8));
+    scope_define_var(&interp.scope, "true", (Value) { .type = VT_UINT8, .value.u8 = 1 });
 
     process_semantics(&semantics, &ast);
 
@@ -277,13 +288,6 @@ void interpret(int32_t argc, char* argv[]) {
         printf("\n===== SEMANTICS ====\n");
         print_scope_structs(semantics.scope);
     }
-
-    // Preloading
-    scope_declare_var(&interp.scope, "false");
-    scope_define_var(&interp.scope, "false", (Value) { .type = VT_UINT8, .value.u8 = 0 });
-
-    scope_declare_var(&interp.scope, "true");
-    scope_define_var(&interp.scope, "true", (Value) { .type = VT_UINT8, .value.u8 = 1 });
 
     run_interpreter(&interp);
 

@@ -23,10 +23,11 @@ void free_scope(Scope* scope) {
     }
 }
 
-void scope_declare_var(Scope* scope, char* name) {
+void scope_declare_var(Scope* scope, char* name, Type type) {
     for (int32_t i = 0; i < 256; ++i) {
         if (scope->variables_k[i] == NULL) {
             scope->variables_k[i] = str_alloc_copy(name);
+            scope->variables_t[i] = type;
             scope->varcount++;
             return;
         }
@@ -61,8 +62,21 @@ Value scope_get_var(Scope* scope, char* name) {
         return scope_get_var(scope->parent, name);
     }
 
-    assert(false);
     return (Value) { 0 };
+}
+
+Type scope_get_var_type(Scope* scope, char* name) {
+    for (int32_t i = 0; i < scope->varcount; ++i) {
+        if (strcmp(scope->variables_k[i], name) == 0) {
+            return scope->variables_t[i];
+        }
+    }
+
+    if (scope->parent != NULL) {
+        return scope_get_var_type(scope->parent, name);
+    }
+
+    return (Type) { 0 };
 }
 
 void print_scope_structs(Scope* scope) {
@@ -88,4 +102,16 @@ void print_scope_structs(Scope* scope) {
 
 void scope_add_defer(Scope* scope, Node node) {
     scope->defers[scope->defer_count++] = node;
+}
+
+Type scope_get_type(Scope* tt, const char* ident) {
+    Type type = type_table_get_type(&tt->type_table, ident);
+
+    if (type.type == TYPE_TYPE_NONE) {
+        if (tt->parent != NULL) {
+            type = scope_get_type(tt->parent, ident);
+        }
+    }
+
+    return type;
 }
