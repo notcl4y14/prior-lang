@@ -9,6 +9,7 @@ const PrintNodeTree_Func PrintNodeTree_Funcs[] = {
     [NT_RETURN_STAT] = print_return_stat_tree,
     [NT_BREAK_STAT] = print_break_stat_tree,
     [NT_CONTINUE_STAT] = print_continue_stat_tree,
+    [NT_DEFER_STAT] = print_defer_stat_tree,
     [NT_VAR_STAT] = print_var_stat_tree,
     [NT_ENUM_STAT] = print_enum_stat_tree,
     [NT_STRUCT_STAT] = print_struct_stat_tree,
@@ -102,6 +103,15 @@ void print_break_stat_tree(Node* node, int32_t indent) {
 void print_continue_stat_tree(Node* node, int32_t indent) {
     print_indent(indent);
     printf("ContinueStat\n");
+}
+
+void print_defer_stat_tree(Node* node, int32_t indent) {
+    NDeferStat defer_stat = node->data.defer_stat;
+
+    print_indent(indent);
+    printf("DeferStat:\n");
+
+    print_node_tree(defer_stat.expr, indent + 1);
 }
 
 void print_var_stat_tree(Node* node, int32_t indent) {

@@ -1122,6 +1122,8 @@ Node parse_stat(Parser* parser) {
         return parse_struct_stat(parser);
     } else if (token->type == TT_VAR || token->type == TT_CONST) {
         return parse_var_stat(parser);
+    } else if (token->type == TT_DEFER) {
+        return parse_defer_stat(parser);
     } else if (token->type == TT_RETURN) {
         return parse_return_stat(parser);
     } else if (token->type == TT_BREAK) {
@@ -1154,7 +1156,7 @@ Node parse_stat(Parser* parser) {
  * return (value);
  */
 Node parse_return_stat(Parser* parser) {
-    const Token* return_token = parser_advance(parser); // `return`
+    const Token* return_token = parser_advance(parser); // 'return'
 
     // If the next token is a semicolon, the return value is NONE
     Node value = parse_expr(parser);
@@ -1167,6 +1169,33 @@ Node parse_return_stat(Parser* parser) {
         },
         .left_pos = return_token->left_pos,
         .right_pos = value.type == NT_NONE ? return_token->right_pos : value.right_pos,
+    };
+
+    return result;
+}
+
+/***
+ * defer (expr);
+ */
+Node parse_defer_stat(Parser* parser) {
+    const Token* defer_token = parser_advance(parser); // 'defer'
+
+    Node expr = parse_expr(parser);
+    if (parser->error) return (Node) { 0 };
+
+    if (expr.type == NT_NONE) {
+        /* Node NONE does not have positions, so we use defer_token->right_pos instead */
+        parser_set_error(parser, "Expected defer expression", defer_token->right_pos);
+        return (Node) { 0 };
+    }
+
+    Node result = (Node) {
+        .type = NT_DEFER_STAT,
+        .data.defer_stat = (NDeferStat) {
+            .expr = new_node(&expr),
+        },
+        .left_pos = defer_token->left_pos,
+        .right_pos = defer_token->right_pos,
     };
 
     return result;

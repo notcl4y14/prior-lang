@@ -21,6 +21,7 @@ void print_program_node_tree(Node* node, int32_t indent);
 void print_return_stat_tree(Node* node, int32_t indent);
 void print_break_stat_tree(Node* node, int32_t indent);
 void print_continue_stat_tree(Node* node, int32_t indent);
+void print_defer_stat_tree(Node* node, int32_t indent);
 void print_var_stat_tree(Node* node, int32_t indent);
 void print_enum_stat_tree(Node* node, int32_t indent);
 void print_struct_stat_tree(Node* node, int32_t indent);
@@ -130,6 +131,8 @@ Node parse_if_stat(Parser* parser);
 Node parse_while_stat(Parser* parser);
 
 Node parse_switch_stat(Parser* parser);
+
+Node parse_defer_stat(Parser* parser);
 
 Node parse_return_stat(Parser* parser);
 

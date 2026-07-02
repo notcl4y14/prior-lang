@@ -1,4 +1,3 @@
-#include "ast.h"
 #include "scope.h"
 #include "type.h"
 #include "value_types.h"
@@ -22,6 +21,12 @@ EvalResult evaluate_return_stat(Interpreter* interp, Scope* scope, Node* node) {
     NRetStat ret_stat = node->data.ret_stat;
     Value value = (Value) { 0 };
 
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
+
     if (ret_stat.expr->type != NT_NONE) {
         value = evaluate_node(interp, scope, ret_stat.expr).value;
         // value = cast_value(value, data->return_type);
@@ -34,6 +39,12 @@ EvalResult evaluate_return_stat(Interpreter* interp, Scope* scope, Node* node) {
 }
 
 EvalResult evaluate_break_stat(Interpreter* interp, Scope* scope, Node* node) {
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
+
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_BREAK,
@@ -41,9 +52,26 @@ EvalResult evaluate_break_stat(Interpreter* interp, Scope* scope, Node* node) {
 }
 
 EvalResult evaluate_continue_stat(Interpreter* interp, Scope* scope, Node* node) {
+    /* Evaluating defers before returning */
+    for (int32_t i = scope->defer_count - 1; i >= 0; --i) {
+        evaluate_node(interp, scope, &scope->defers[i]);
+    }
+    scope->is_deferred = true;
+
     return (EvalResult) {
         .value = (Value) { 0 },
         .break_type = EBT_CONTINUE,
+    };
+}
+
+EvalResult evaluate_defer_stat(Interpreter* interp, Scope* scope, Node* node) {
+    NDeferStat defer_stat = node->data.defer_stat;
+
+    scope_add_defer(scope, *defer_stat.expr);
+
+    return (EvalResult) {
+        .value = (Value) { 0 },
+        .break_type = EBT_NONE,
     };
 }
 
@@ -309,6 +337,14 @@ EvalResult evaluate_block(Interpreter* interp, Scope* scope, Node* node) {
         if (last_result.break_type == EBT_RETURN) {
             break;
         }
+    }
+
+    /* Evaluating defers */
+    if (!sub_scope.is_deferred) {
+        for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+            evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+        }
+        sub_scope.is_deferred = true;
     }
 
     free_scope(&sub_scope);
@@ -750,6 +786,14 @@ EvalResult evaluate_call_expr(Interpreter* interp, Scope* scope, Node* node) {
             }
         }
 
+        /* Evaluating defers */
+        if (!sub_scope.is_deferred) {
+            for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+                evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+            }
+            sub_scope.is_deferred = true;
+        }
+
         free_scope(&sub_scope);
 
         result = last_result;
@@ -829,6 +873,7 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_RETURN_STAT:   return evaluate_return_stat(interp, scope, node);
         case NT_BREAK_STAT:    return evaluate_break_stat(interp, scope, node);
         case NT_CONTINUE_STAT: return evaluate_continue_stat(interp, scope, node);
+        case NT_DEFER_STAT:    return evaluate_defer_stat(interp, scope, node);
         case NT_VAR_STAT:      return evaluate_var_stat(interp, scope, node);
         case NT_FUNC_STAT:     return evaluate_fn_stat(interp, scope, node);
         case NT_IF_STAT:       return evaluate_if_stat(interp, scope, node);
@@ -875,6 +920,8 @@ void run_interpreter(Interpreter* interp) {
     Value main_fn_ptr = scope_get_var(&interp->scope, "main");
     ValueFunction* main_fn_value = (ValueFunction*) main_fn_ptr.value.u64;
     NBlock fn_block = main_fn_value->node->data.block;
+
+    // Scope sub_scope = create_scope(&interp->scope);
 
     for (int32_t i = 0; i < fn_block.nodes.count; ++i) {
         EvalResult result = evaluate_node(interp, &interp->scope, &fn_block.nodes.nodes[i]);
@@ -936,4 +983,14 @@ void run_interpreter(Interpreter* interp) {
             break;
         }
     }
+
+    /* Evaluating defers */
+    // if (!sub_scope.is_deferred) {
+    //     for (int32_t i = sub_scope.defer_count - 1; i >= 0; --i) {
+    //         evaluate_node(interp, &sub_scope, &sub_scope.defers[i]);
+    //     }
+    //     sub_scope.is_deferred = true;
+    // }
+
+    // free_scope(&sub_scope);
 }

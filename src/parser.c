@@ -15,6 +15,7 @@ const char* NodeTypeNames[] = {
     [NT_RETURN_STAT]   = "ReturnStat",
     [NT_BREAK_STAT]    = "BreakStat",
     [NT_CONTINUE_STAT] = "ContinueStat",
+    [NT_DEFER_STAT]    = "DeferStat",
     [NT_VAR_STAT]      = "VarStat",
     [NT_ENUM_STAT]     = "EnumStat",
     [NT_STRUCT_STAT]   = "StructStat",

@@ -18,18 +18,11 @@ struct Entity {
     position: Vector2f,
 }
 
-// agugu
-// abakaer // doo doo
 fn main(): i32 {
-/*
- laidosponoto
- tubalamus
- */
-    /***
-      * I am a multiline
-      * comment too.
-      */
-    var my_struct: MyStruct = { x = 10, y = 10, z = 100 };
-    var empty_struct: Vector2f;
-    return (u8) add((900), 10/*, (20)*/);
+    var x: i32 = 100;
+    defer x *= 2; // remove "defer" to get 210 instead of 220
+
+    x = add(x, 10);
+
+    return x;
 }

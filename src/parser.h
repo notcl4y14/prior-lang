@@ -19,6 +19,7 @@ typedef enum NodeType {
     NT_RETURN_STAT,
     NT_BREAK_STAT,
     NT_CONTINUE_STAT,
+    NT_DEFER_STAT,
     NT_VAR_STAT,
     NT_ENUM_STAT,
     NT_STRUCT_STAT,
@@ -112,6 +113,10 @@ typedef struct NCompoundLit {
 typedef struct NRetStat {
     Node* expr;
 } NRetStat;
+
+typedef struct NDeferStat {
+    Node* expr;
+} NDeferStat;
 
 typedef struct NVarStat {
     bool  constant;
@@ -244,6 +249,7 @@ typedef union NodeData {
     NCompoundLit compound_lit;
 
     NRetStat    ret_stat;
+    NDeferStat  defer_stat;
     NVarStat    var_stat;
     NEnumStat   enum_stat;
     NStructStat struct_stat;

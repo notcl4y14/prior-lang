@@ -51,6 +51,12 @@ Type process_continue_stat(Semantics* s, Node* node) {
 //     return false;
 // }
 
+Type process_defer_stat(Semantics* s, Node* node) {
+    NDeferStat defer_stat = node->data.defer_stat;
+
+    return process_node(s, defer_stat.expr);
+}
+
 Type process_var_stat(Semantics* s, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
@@ -235,6 +241,9 @@ Type process_node(Semantics* s, Node* node) {
 
         case NT_CONTINUE_STAT:
             return process_continue_stat(s, node);
+
+        case NT_DEFER_STAT:
+            return process_defer_stat(s, node);
 
         case NT_VAR_STAT:
             return process_var_stat(s, node);

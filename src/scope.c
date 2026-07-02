@@ -10,6 +10,8 @@ Scope create_scope(Scope* parent) {
     Scope scope = (Scope) { 0 };
     scope.parent = parent;
     scope.type_table = create_type_table();
+    scope.defer_count = 0;
+    scope.is_deferred = false;
     return scope;
 }
 
@@ -82,4 +84,8 @@ void print_scope_structs(Scope* scope) {
 
         printf("}\n");
     }
+}
+
+void scope_add_defer(Scope* scope, Node node) {
+    scope->defers[scope->defer_count++] = node;
 }
