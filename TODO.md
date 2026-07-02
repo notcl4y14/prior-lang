@@ -29,7 +29,7 @@
   - [x] Type Table
     - [x] Custom types
   - [x] Scoping
-  - [ ] Let the semantics system declare global variables and declarations instead of the interpreter
+  - [x] Let the semantics system declare global variables and declarations instead of the interpreter
 - [ ] Interpterer
   - [ ] Implement error system
   - [ ] Handle errors
