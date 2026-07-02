@@ -45,6 +45,60 @@ EvalResult evaluate_continue_stat(Interpreter* interp, Scope* scope, Node* node)
     };
 }
 
+/***
+ * Separator
+ */
+
+Value instantiate_struct(Type st, TypeTable* tt, Scope* scope, Interpreter* interp, const NCompoundLit* compound) {
+    /***
+     * st - Struct Type. A.K.A: Type definition of the Struct.
+     * sv - Struct Value. A.K.A: Runtime value of the struct.
+     */
+    Value sv = (Value) { .type = VT_STRUCT };
+
+    /* Initializing struct value data */
+    Struct* sv_data = &sv.value.struct_;
+    *sv_data = create_struct_value_data(st.data.data_struct.count);
+
+    /* Inserting compound values into the fields */
+    for (int32_t i = 0; i < st.data.data_struct.count; ++i) {
+        Type field_type = type_table_get_type(tt, st.data.data_struct.fields_types[i]);
+        char* st_field_ident = st.data.data_struct.fields_names[i];
+
+        sv_data->fields[i] = st_field_ident;
+        sv_data->values[i].type = get_typedef_value_type(field_type);
+
+        /* Iterating through compound fields to search for the matching field */
+        for (int32_t j = 0; j < compound->values.count; ++j) {
+            Node* compound_field_node = &compound->values.nodes[j];
+            assert(compound_field_node->type == NT_ASSIGN_EXPR); /* For now, you can only do `ident = expr` compound fields */
+
+            /* Getting compound field's identifier */
+            const char* compound_field_ident = compound_field_node->data.assign_expr.ident->data.ident_lit.value;
+
+            /* Checking if the compound field matches with the struct field */
+            if (strcmp(st_field_ident, compound_field_ident) == 0) {
+                /* Evaluating the compound value */
+                Value compound_field_value = evaluate_node(interp, scope, compound_field_node->data.assign_expr.value).value;
+
+                /* Auto-cast */
+                if (compound_field_value.type != sv_data->values[i].type) {
+                    compound_field_value = cast_value(compound_field_value, sv_data->values[i].type);
+                }
+
+                /* Assigning the compound field to the struct instance field */
+                sv_data->values[i].value = compound_field_value.value;
+            }
+        }
+    }
+
+    return sv;
+}
+
+/***
+ * Separator
+ */
+
 EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     NVarStat var_stat = node->data.var_stat;
 
@@ -60,52 +114,18 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
 
     scope_declare_var(scope, ident_name);
 
-    /***
-     * Ig bro.
-     */
     if (var_stat.value != NULL) {
         Value value = (Value) { 0 };
 
-        if (type.type == TYPE_TYPE_STRUCT) {
-            assert(var_stat.value->type == NT_COMPOUND_LIT);
+        switch (type.type) {
+            case TYPE_TYPE_STRUCT:
+                assert(var_stat.value->type == NT_COMPOUND_LIT);
+                value = instantiate_struct(type, &interp->scope.type_table, scope, interp, &var_stat.value->data.compound_lit);
+                break;
 
-            Value struct_value = (Value) { .type = VT_STRUCT };
-
-            /* Initializing struct value data */
-            Struct* struct_data = &struct_value.value.struct_;
-            *struct_data = create_struct_value_data(type.data.data_struct.count);
-
-            /* Inserting compound values into the fields */
-            for (int32_t i = 0; i < type.data.data_struct.count; ++i) {
-                Type field_type = type_table_get_type(&interp->scope.type_table, type.data.data_struct.fields_types[i]);
-                char* struct_field_name = type.data.data_struct.fields_names[i];
-
-                struct_data->fields[i] = struct_field_name;
-                struct_data->values[i].type = get_typedef_value_type(field_type);
-
-                /* Iterating through compound fields */
-                for (int32_t j = 0; j < var_stat.value->data.compound_lit.values.count; ++j) {
-                    Node* compound_field = &var_stat.value->data.compound_lit.values.nodes[j];
-                    assert(compound_field->type == NT_ASSIGN_EXPR);
-
-                    const char* compound_field_name = compound_field->data.assign_expr.ident->data.ident_lit.value;
-
-                    /* Checking if the compound field matches with the struct field */
-                    if (strcmp(struct_field_name, compound_field_name) == 0) {
-                        Value compound_field_value = evaluate_node(interp, scope, compound_field->data.assign_expr.value).value;
-
-                        /* Auto-cast */
-                        if (compound_field_value.type != struct_data->values[i].type) {
-                            compound_field_value = cast_value(compound_field_value, struct_data->values[i].type);
-                        }
-
-                        /* Assigning the compound field to the struct instance field */
-                        struct_data->values[i].value = compound_field_value.value;
-                    }
-                }
-            }
-        } else {
-            value = evaluate_node(interp, scope, var_stat.value).value;
+            default:
+                value = evaluate_node(interp, scope, var_stat.value).value;
+                break;
         }
 
         scope_define_var(scope, ident_name, value);
