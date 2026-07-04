@@ -26,22 +26,25 @@
   - [x] Implement error system
   - [x] Implement MULTIPLE ERRORS system
   - [x] Implement node positions into errors
-  - [ ] Implement auto-cast
   - [x] Type Table
     - [x] Custom types
   - [x] Scoping
   - [x] Let the semantics system declare global variables and declarations instead of the interpreter
+  - [ ] Implement auto-cast
+  - [ ] Check for function call expressions
 - [ ] Interpterer
+  - [x] Isolate function call scope to the global state
+    - The function you're calling should not see your local variables
   - [ ] Implement error system
   - [ ] Handle errors
     - [ ] Division by 0
     - [ ] Variable definition
     - [ ] Function Arguments and Parameters
-  - [x] Isolate function call scope to the global state
-    - The function you're calling should not see your local variables
+- [ ] Compilation
+  - [ ] Implement Abstract Assembly Representation
+  - [ ] Assembly Generation
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
-
-- [ ] Compilation
-  - [ ] Assembly Generation
+- [ ] Miscellaneous
+  - [ ] Free strings
