@@ -24,8 +24,8 @@
     - Or by allocating an array that records every AST allocation to free later
 - [ ] Semantics
   - [x] Implement error system
-  - [ ] Implement MULTIPLE ERRORS system
-  - [ ] Implement node positions into errors
+  - [x] Implement MULTIPLE ERRORS system
+  - [x] Implement node positions into errors
   - [ ] Implement auto-cast
   - [x] Type Table
     - [x] Custom types

@@ -133,8 +133,11 @@ void compile(int32_t argc, char* argv[]) {
     Semantics semantics = create_semantics(&scope);
     process_semantics(&semantics, &result);
 
-    if (semantics.error) {
-        printf("%s\n", get_semantics_error(&semantics));
+    if (semantics.error_list.count > 0) {
+        for (int32_t i = 0; i < semantics.error_list.count; ++i) {
+            const Error* error = &semantics.error_list.errors[i];
+            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
+        }
 
         free_token_array(&token_array);
         free_lexer(&lexer);
@@ -267,11 +270,12 @@ void interpret(int32_t argc, char* argv[]) {
 
     process_semantics(&semantics, &ast);
 
-    if (semantics.error) {
-        printf("%s\n", get_semantics_error(&semantics));
+    if (semantics.error_list.count > 0) {
+        for (int32_t i = 0; i < semantics.error_list.count; ++i) {
+            const Error* error = &semantics.error_list.errors[i];
+            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
+        }
 
-        free_scope(&scope);
-        free_parser(&parser);
         free_token_array(&token_array);
         free_lexer(&lexer);
 
