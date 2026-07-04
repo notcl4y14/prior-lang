@@ -48,3 +48,27 @@
   - [ ] Comptime unary expression solver
 - [ ] Miscellaneous
   - [ ] Free strings
+
+When the language has all or most of the TODO-s done, the development shifts onto the next stage with TODO below:
+
+- [ ] Lexer
+  - [ ] Implement string backslashes, interpolation
+  - [ ] Implement explicit integer variations (like 12345u64, 2.0f, 3423.2f32, 910i, 0xFFA45D, 123_000_000, 0b11000101)
+- [ ] AST
+  - [ ] Implement pointers and addresses
+  - [ ] Implement methods (functions assigned to structs)
+  - [ ] Implement function pointers
+  - [ ] Implement multiple-return values to functions (tuples)
+  - [ ] Implement imports
+  - [ ] Implement function modifiers
+    - [ ] extern
+  - [ ] Implement FFI
+- [ ] Abstract Assembly Representation
+  - [ ] Handle imports
+  - [ ] Handle static/dynamic libraries
+  - [ ] Handle FFI
+- [ ] Standard library (After imports are implemented)
+  - [ ] Input/Output library (std.io)
+    - [ ] Print functions
+    - [ ] Read function
+    - [ ] Maybe some console utils functions like clear terminal or set colors
