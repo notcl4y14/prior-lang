@@ -21,7 +21,6 @@ bool show_tokens = false;
 bool show_ast = false;
 bool show_semantics = false;
 bool show_bytecode = false;
-bool no_semantics = false;
 
 void print_tokens(TokenArray* tokens) {
     printf("\n==== TOKENS ====\n");
@@ -52,7 +51,6 @@ void usage() {
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
     printf("        --p-semantics - Print the Semantics result of the AST\n");
-    printf("        --no-semantics - Disable semantics (type checking)\n");
     printf("    interpret <file> - Interpret and run the file\n");
     printf("        --p-stages - Print the stages of the compiling process\n");
     printf("        --p-tokens - Print the tokens of the code\n");
@@ -65,7 +63,6 @@ void compile(int32_t argc, char* argv[]) {
     show_tokens = args_contains(argc, argv, "--p-tokens");
     show_ast = args_contains(argc, argv, "--p-ast");
     show_bytecode = args_contains(argc, argv, "--p-bytecode");
-    no_semantics = args_contains(argc, argv, "--no-semantics");
 
     /* Lexer Stage */
     char* filename = argv[2];
@@ -128,27 +125,23 @@ void compile(int32_t argc, char* argv[]) {
         print_node_tree(&result, 0);
     }
 
-    // printf("The NodePool's used size is %ld bytes\n", parser.node_pool.count);
-
     /* Semantics Stage */
-    if (!no_semantics) {
-        if (show_stages)
-            printf("Processing semantics...\n");
+    if (show_stages)
+        printf("Processing semantics...\n");
 
-        Scope scope = create_scope(NULL);
-        Semantics semantics = create_semantics(&scope);
-        process_semantics(&semantics, &result);
+    Scope scope = create_scope(NULL);
+    Semantics semantics = create_semantics(&scope);
+    process_semantics(&semantics, &result);
 
-        if (semantics.error) {
-            printf("%s\n", get_semantics_error(&semantics));
+    if (semantics.error) {
+        printf("%s\n", get_semantics_error(&semantics));
 
-            free_token_array(&token_array);
-            free_lexer(&lexer);
+        free_token_array(&token_array);
+        free_lexer(&lexer);
 
-            free(lexer_code);
-            lexer_code = NULL;
-            return;
-        }
+        free(lexer_code);
+        lexer_code = NULL;
+        return;
     }
 
     // if (show_stages)
