@@ -72,6 +72,5 @@ int main() {
         printf("\n");
     }
 
-    free_type_struct_data(&struct_data);
     free_type_table(&type_table);
 }
