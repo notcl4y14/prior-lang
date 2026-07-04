@@ -25,7 +25,7 @@ void free_scope(Scope* scope) {
     free_type_table(&scope->type_table);
 }
 
-void scope_declare_var(Scope* scope, char* name, Type type) {
+void scope_declare_var(Scope* scope, const char* name, Type type) {
     for (int32_t i = 0; i < 256; ++i) {
         if (scope->variables_k[i] == NULL) {
             scope->variables_k[i] = str_alloc_copy(name);
@@ -38,7 +38,7 @@ void scope_declare_var(Scope* scope, char* name, Type type) {
     assert(false);
 }
 
-void scope_define_var(Scope* scope, char* name, Value value) {
+void scope_define_var(Scope* scope, const char* name, Value value) {
     for (int32_t i = 0; i < scope->varcount; ++i) {
         if (strcmp(scope->variables_k[i], name) == 0) {
             scope->variables_v[i] = value;
@@ -53,7 +53,7 @@ void scope_define_var(Scope* scope, char* name, Value value) {
     assert(false);
 }
 
-Value scope_get_var(Scope* scope, char* name) {
+Value scope_get_var(Scope* scope, const char* name) {
     for (int32_t i = 0; i < scope->varcount; ++i) {
         if (strcmp(scope->variables_k[i], name) == 0) {
             return scope->variables_v[i];
@@ -67,7 +67,7 @@ Value scope_get_var(Scope* scope, char* name) {
     return (Value) { 0 };
 }
 
-Type scope_get_var_type(Scope* scope, char* name) {
+Type scope_get_var_type(Scope* scope, const char* name) {
     for (int32_t i = 0; i < scope->varcount; ++i) {
         if (strcmp(scope->variables_k[i], name) == 0) {
             return scope->variables_t[i];

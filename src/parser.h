@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "token.h"
+#include "type.h"
 #include <lexer.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -281,6 +282,8 @@ typedef struct Node {
 
     TokenPosition left_pos;
     TokenPosition right_pos;
+
+    Type return_type;
 } Node;
 
 

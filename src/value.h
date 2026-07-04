@@ -16,7 +16,8 @@ typedef enum ValueType {
     VT_UINT64,
     VT_FLOAT32,
     VT_FLOAT64,
-    VT_STRUCT
+    VT_STRUCT,
+    VT_FUNCTION,
 } ValueType;
 
 extern const char* ValueTypeNames[];

@@ -22,10 +22,10 @@ typedef struct Scope {
 
 Scope create_scope(Scope* parent);
 void free_scope(Scope* scope);
-void scope_declare_var(Scope* scope, char* name, Type type);
-void scope_define_var(Scope* scope, char* name, Value value);
-Value scope_get_var(Scope* scope, char* name);
-Type scope_get_var_type(Scope* scope, char* name);
+void scope_declare_var(Scope* scope, const char* name, Type type);
+void scope_define_var(Scope* scope, const char* name, Value value);
+Value scope_get_var(Scope* scope, const char* name);
+Type scope_get_var_type(Scope* scope, const char* name);
 void print_scope_structs(Scope* scope);
 void scope_add_defer(Scope* scope, Node node);
 

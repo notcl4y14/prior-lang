@@ -20,10 +20,24 @@ TypeStructData create_type_struct_data();
 void free_type_struct_data(TypeStructData* type_struct_data);
 
 /***
+ * TypeStructData is a semantical type definition type data
+ * that represents a function. Couldn't have guessed it either.
+ */
+typedef struct TypeFunctionData {
+    char** params_names;
+    char** params_types;
+    size_t count;
+} TypeFunctionData;
+
+TypeFunctionData create_type_function_data();
+void free_type_function_data(TypeFunctionData* type_function_data);
+
+/***
  * TypeType assigns a semantical type instance's type:
  *     - ALIAS: The type definition is an alias to another type.
  *     - VALUE: The type definition is a type of a primitive value. (u8, i32)
- *     - STRUCT: The type defines a struct
+ *     - STRUCT: The type defines a struct.
+ *     - FUNCTION: The type defines a function.
  * There is a better way to name this. Like TypeDefType, which is less confusing
  * but still is.
  */
@@ -32,6 +46,7 @@ typedef enum TypeType {
     TYPE_TYPE_ALIAS,
     TYPE_TYPE_VALUE,
     TYPE_TYPE_STRUCT,
+    TYPE_TYPE_FUNCTION,
 } TypeType;
 
 /***
@@ -46,15 +61,17 @@ typedef enum TypeType {
 typedef struct Type {
     TypeType type;
     union {
-        char*          data_alias;
-        ValueType      data_value;
-        TypeStructData data_struct;
+        char*            data_alias;
+        ValueType        data_value;
+        TypeStructData   data_struct;
+        TypeFunctionData data_function;
     } data;
 } Type;
 
 Type create_alias_typedef(const char* type_name);
 Type create_value_typedef(ValueType value_type);
 Type create_struct_typedef(TypeStructData struct_type);
+Type create_function_typedef(TypeFunctionData function_type);
 ValueType get_typedef_value_type(Type type);
 
 /***

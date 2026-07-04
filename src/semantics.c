@@ -105,35 +105,45 @@ SemRes process_var_stat(Semantics* s, Scope* scope, Node* node) {
 SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
     SemRes result;
 
+    // TODO: Store function in the type table
+
     NFuncStat func_stat = node->data.func_stat;
+
+    TypeFunctionData func_data = create_type_function_data();
 
     Scope sub_scope = create_scope(scope);
 
     for (int32_t i = 0; i < func_stat.params.count; ++i) {
-        NParameter* param = &func_stat.params.nodes[i].data.parameter;
-        char* param_ident_str = param->ident->data.ident_lit.value;
-        char* param_type_str = param->type->data.ident_lit.value;
+        const NParameter* param = &func_stat.params.nodes[i].data.parameter;
+        char* param_strident = param->ident->data.ident_lit.value;
+        char* param_strtype  = param->type->data.ident_lit.value;
 
-        Type param_type = scope_get_type(scope, param_type_str);
+        Type param_type = scope_get_type(scope, param_strtype);
 
         if (param_type.type == TYPE_TYPE_NONE) {
             // TODO: bad code, sprintf, fix.
             char emsg[512] = {0};
-            sprintf(emsg, "Type '%s' is not defined!", param_type_str);
+            sprintf(emsg, "Type '%s' is not defined!", param_strtype);
             semantics_add_error(s, emsg, param->type->left_pos);
             return (SemRes) { { 0 }, true };
         }
 
-        scope_declare_var(&sub_scope, param_ident_str, param_type);
+        func_data.params_names[i] = param_strident;
+        func_data.params_types[i] = param_strtype;
+        func_data.count++;
+
+        ValueType param_vtype = get_typedef_value_type(param_type);
+
+        scope_declare_var(&sub_scope, param_strident, param_type);
         scope_define_var(
             &sub_scope,
-            param_ident_str,
-            (Value) {
-                .type = get_typedef_value_type(param_type),
-                {}
-            }
+            param_strident,
+            (Value) { param_vtype, {} }
         );
     }
+
+    const char* func_name = func_stat.ident->data.ident_lit.value;
+    type_table_assign_type(&scope->type_table, func_name, create_function_typedef(func_data));
 
     result = process_node(s, &sub_scope, func_stat.body);
     if (result.error) return result;
@@ -247,18 +257,62 @@ SemRes process_unary_expr(Semantics* s, Scope* scope, Node* node) {
 }
 
 SemRes process_call_expr(Semantics* s, Scope* scope, Node* node) {
-    // TODO: Check function
+    SemRes result;
+
+    const NCallExpr* call_expr = &node->data.call_expr;
+
+    Type function_type = scope_get_type(scope, call_expr->member->data.ident_lit.value);
+
+    /* Check if the call expression tries to call a non-callable identifier */
+    if (function_type.type != TYPE_TYPE_FUNCTION) {
+        char errmsg[512] = { 0 };
+        sprintf(errmsg, "'%s' is not callable", call_expr->member->data.ident_lit.value);
+        semantics_add_error(s, errmsg, call_expr->member->left_pos);
+        return (SemRes) { { 0 }, true };
+    }
+
+    const TypeFunctionData* function_data = &function_type.data.data_function;
+
+    /* Check for argument-parameter matching */
+    for (int32_t i = 0; i < call_expr->args.count; ++i) {
+        const Node*      arg_node = &call_expr->args.nodes[i];
+        const NArgument* arg_data = &arg_node->data.argument;
+
+        const char* param_strname = function_data->params_names[i];
+        const char* param_strtype = function_data->params_types[i];
+
+        result = process_node(s, scope, arg_data->expr);
+        if (result.error) return result;
+
+        // Type      arg_type = result.type;
+        ValueType arg_vtype = get_typedef_value_type(result.type);
+
+        Type      param_type = scope_get_type(scope, param_strtype);
+        ValueType param_vtype = get_typedef_value_type(param_type);
+
+        /* First we attempt to auto-cast */
+        // if (arg_vtype != param_vtype) {
+        //     // TODO: Implement function that checks if two values are castable
+        //     arg_vtype = cast_value(arg_vtype, param_vtype);
+        // }
+
+        /* Then we check if the auto-cast failed */
+        if (arg_vtype != param_vtype) {
+            char errmsg[512] = { 0 };
+            // TODO: Get argument's type name
+            sprintf(errmsg, "Argument at %d of type %s does not match with parameter %s: %s", i + 1, "UNKNOWN", param_strname, param_strtype);
+            semantics_add_error(s, errmsg, arg_node->left_pos);
+            return (SemRes) { { 0 }, true };
+        }
+    }
+
     return (SemRes) { { 0 }, false };
 }
 
 SemRes process_cast_expr(Semantics* s, Scope* scope, Node* node) {
-    return (SemRes) {
-        scope_get_type(
-            scope,
-            node->data.cast_expr.type->data.ident_lit.value
-        ),
-        false
-    };
+    Type casted_type = scope_get_type(scope, node->data.cast_expr.type->data.ident_lit.value);
+    // printf("%s\n", ValueTypeNames[casted_type.data.data_value]);
+    return (SemRes) { casted_type, false };
 }
 
 SemRes process_struct_stat(Semantics* s, Scope* scope, Node* node) {

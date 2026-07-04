@@ -30,8 +30,8 @@
     - [x] Custom types
   - [x] Scoping
   - [x] Let the semantics system declare global variables and declarations instead of the interpreter
+  - [x] Check for function call expressions
   - [ ] Implement auto-cast
-  - [ ] Check for function call expressions
 - [ ] Interpterer
   - [x] Isolate function call scope to the global state
     - The function you're calling should not see your local variables

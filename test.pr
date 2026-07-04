@@ -22,7 +22,7 @@ fn main(): i32 {
     var x: i32 = 100;
     defer x *= 2; // remove "defer" to get 210 instead of 220
 
-    x = add(x, 10);
+    x = add((i64) x, (i64) 10);
 
     return x;
 }

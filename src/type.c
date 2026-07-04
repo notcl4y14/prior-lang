@@ -31,6 +31,28 @@ void free_type_struct_data(TypeStructData* type_struct_data) {
     type_struct_data->fields_names = NULL;
 }
 
+TypeFunctionData create_type_function_data() {
+    TypeFunctionData type_func_data = (TypeFunctionData) { 0 };
+
+    type_func_data.params_names = calloc(256, sizeof(char*));
+    assert(type_func_data.params_names != NULL && "Failed to allocate (TypeFunctionData).params_names");
+
+    type_func_data.params_types = calloc(256, sizeof(char*));
+    assert(type_func_data.params_types != NULL && "Failed to allocate (TypeFunctionData).params_types");
+
+    type_func_data.count = 0;
+
+    return type_func_data;
+}
+
+void free_type_function_data(TypeFunctionData* type_function_data) {
+    free(type_function_data->params_types);
+    type_function_data->params_types = NULL;
+
+    free(type_function_data->params_names);
+    type_function_data->params_names = NULL;
+}
+
 
 
 Type create_alias_typedef(const char* type_name) {
@@ -61,11 +83,21 @@ Type create_struct_typedef(TypeStructData struct_type) {
     return type;
 }
 
+Type create_function_typedef(TypeFunctionData function_type) {
+    Type type = (Type) { 0 };
+
+    type.type = TYPE_TYPE_FUNCTION;
+    type.data.data_function = function_type;
+
+    return type;
+}
+
 ValueType get_typedef_value_type(Type type) {
     switch (type.type) {
-        case TYPE_TYPE_VALUE:   return type.data.data_value;
-        case TYPE_TYPE_STRUCT:  return VT_STRUCT;
-        default: assert(false); return VT_NONE;
+        case TYPE_TYPE_VALUE:    return type.data.data_value;
+        case TYPE_TYPE_STRUCT:   return VT_STRUCT;
+        case TYPE_TYPE_FUNCTION: return VT_FUNCTION;
+        default: assert(false);  return VT_NONE;
     }
 }
 
@@ -91,6 +123,8 @@ void free_type_table(TypeTable* tt) {
 
         if (type->type == TYPE_TYPE_STRUCT) {
             free_type_struct_data(&type->data.data_struct);
+        } else if (type->type == TYPE_TYPE_FUNCTION) {
+            free_type_function_data(&type->data.data_function);
         }
     }
 
@@ -111,10 +145,8 @@ void type_table_assign_type(TypeTable* tt, const char* ident, Type type) {
 Type type_table_get_type(TypeTable* tt, const char* ident) {
     for (int32_t i = 0; i < tt->count; ++i) {
         const char* type_ident = tt->types_idents[i];
-        // printf("search %s == %s\n", ident, type_ident);
 
         if (strcmp(type_ident, ident) == 0) {
-            // printf("Found!\n");
             const Type type = tt->types_values[i];
 
             /* Find the source of alias */
