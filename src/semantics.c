@@ -102,6 +102,39 @@ SemRes process_var_stat(Semantics* s, Scope* scope, Node* node) {
     return (SemRes) { variable_type, false };
 }
 
+SemRes process_enum_stat(Semantics* s, Scope* scope, Node* node) {
+    // SemRes result;
+
+    const NEnumStat* enum_stat = &node->data.enum_stat;
+
+    TypeEnumData type_enum_data = create_type_enum_data();
+
+    for (int32_t i = 0; i < enum_stat->entries.count; ++i) {
+        const NEnumEntry* entry_data = &enum_stat->entries.nodes[i].data.enum_entry;
+        char* entry_identstr = entry_data->ident->data.ident_lit.value;
+
+        Value result_value = (Value) { 0 };
+
+        // TODO: Enum entry assignment support
+        if (entry_data->value != NULL && entry_data->value->type != NT_NONE) {
+            // result = process_node(s, scope, entry_data->value);
+            // if (result.error) return result;
+        } else {
+            result_value.type = VT_INT32;
+            result_value.value.i32 = i;
+        }
+
+        type_enum_data.entries_names[i] = entry_identstr;
+        type_enum_data.entries_values[i] = result_value;
+        type_enum_data.count++;
+    }
+
+    const char* enum_identstr = enum_stat->ident->data.ident_lit.value;
+    type_table_assign_type(&scope->type_table, enum_identstr, create_enum_typedef(type_enum_data));
+
+    return (SemRes) { { 0 }, false };
+}
+
 SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
     SemRes result;
 
@@ -311,7 +344,6 @@ SemRes process_call_expr(Semantics* s, Scope* scope, Node* node) {
 
 SemRes process_cast_expr(Semantics* s, Scope* scope, Node* node) {
     Type casted_type = scope_get_type(scope, node->data.cast_expr.type->data.ident_lit.value);
-    // printf("%s\n", ValueTypeNames[casted_type.data.data_value]);
     return (SemRes) { casted_type, false };
 }
 
@@ -358,6 +390,8 @@ SemRes process_node(Semantics* s, Scope* scope, Node* node) {
         case NT_CONTINUE_STAT: return process_continue_stat(s, scope, node);
         case NT_DEFER_STAT:    return process_defer_stat(s, scope, node);
         case NT_VAR_STAT:      return process_var_stat(s, scope, node);
+        case NT_ENUM_STAT:     return process_enum_stat(s, scope, node);
+        case NT_STRUCT_STAT:   return process_struct_stat(s, scope, node);
         case NT_FUNC_STAT:     return process_fn_stat(s, scope, node);
         case NT_IF_STAT:       return process_if_stat(s, scope, node);
         case NT_WHILE_STAT:    return process_while_stat(s, scope, node);
@@ -371,7 +405,6 @@ SemRes process_node(Semantics* s, Scope* scope, Node* node) {
         case NT_ASSIGN_EXPR: return process_assign_expr(s, scope, node);
         case NT_CALL_EXPR:   return process_call_expr(s, scope, node);
         case NT_CAST_EXPR:   return process_cast_expr(s, scope, node);
-        case NT_STRUCT_STAT: return process_struct_stat(s, scope, node);
 
         default:
             printf("Unhandled semantics node type: %s\n", NodeTypeNames[node->type]);

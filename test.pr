@@ -18,6 +18,13 @@ struct Entity {
     position: Vector2f,
 }
 
+enum MyEnum {
+    ELEMENT_1,
+    ELEMENT_2,
+    AJDKSFJK,
+    SKJHDFIE,
+}
+
 fn main(): i32 {
     var x: i32 = 100;
     defer x *= 2; // remove "defer" to get 210 instead of 220

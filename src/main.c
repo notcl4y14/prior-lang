@@ -286,6 +286,7 @@ void interpret(int32_t argc, char* argv[]) {
 
     if (show_semantics) {
         printf("\n===== SEMANTICS ====\n");
+        print_scope_enums(semantics.scope);
         print_scope_structs(semantics.scope);
     }
 

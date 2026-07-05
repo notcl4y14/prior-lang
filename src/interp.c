@@ -875,6 +875,8 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_BREAK_STAT:    return evaluate_break_stat(interp, scope, node);
         case NT_CONTINUE_STAT: return evaluate_continue_stat(interp, scope, node);
         case NT_DEFER_STAT:    return evaluate_defer_stat(interp, scope, node);
+        case NT_ENUM_STAT:     return (EvalResult) { 0 };
+        case NT_STRUCT_STAT:   return evaluate_struct_stat(interp, scope, node);
         case NT_VAR_STAT:      return evaluate_var_stat(interp, scope, node);
         case NT_FUNC_STAT:     return evaluate_fn_stat(interp, scope, node);
         case NT_IF_STAT:       return evaluate_if_stat(interp, scope, node);
@@ -887,7 +889,6 @@ EvalResult evaluate_node(Interpreter* interp, Scope* scope, Node* node) {
         case NT_ASSIGN_EXPR: return evaluate_assign_expr(interp, scope, node);
         case NT_CALL_EXPR:   return evaluate_call_expr(interp, scope, node);
         case NT_CAST_EXPR:   return evaluate_cast_expr(interp, scope, node);
-        case NT_STRUCT_STAT: return evaluate_struct_stat(interp, scope, node);
 
         default:
             printf("Node type %s not handled in evaluation switch\n", NodeTypeNames[node->type]);

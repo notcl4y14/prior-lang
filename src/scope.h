@@ -27,6 +27,7 @@ void scope_define_var(Scope* scope, const char* name, Value value);
 Value scope_get_var(Scope* scope, const char* name);
 Type scope_get_var_type(Scope* scope, const char* name);
 void print_scope_structs(Scope* scope);
+void print_scope_enums(Scope* scope);
 void scope_add_defer(Scope* scope, Node node);
 
 /* Returns type from TypeTable, but searches further */

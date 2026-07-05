@@ -53,6 +53,28 @@ void free_type_function_data(TypeFunctionData* type_function_data) {
     type_function_data->params_names = NULL;
 }
 
+TypeEnumData create_type_enum_data() {
+    TypeEnumData type_enum_data = (TypeEnumData) { 0 };
+
+    type_enum_data.entries_names = calloc(256, sizeof(char*));
+    assert(type_enum_data.entries_names != NULL && "Failed to allocate (TypeEnumData).entries_names");
+
+    type_enum_data.entries_values = calloc(256, sizeof(Value));
+    assert(type_enum_data.entries_values != NULL && "Failed to allocate (TypeEnumData).entries_values");
+
+    type_enum_data.count = 0;
+
+    return type_enum_data;
+}
+
+void free_type_enum_data(TypeEnumData* type_enum_data) {
+    free(type_enum_data->entries_values);
+    type_enum_data->entries_values = NULL;
+
+    free(type_enum_data->entries_names);
+    type_enum_data->entries_names = NULL;
+}
+
 
 
 Type create_alias_typedef(const char* type_name) {
@@ -70,6 +92,15 @@ Type create_value_typedef(ValueType value_type) {
 
     type.type = TYPE_TYPE_VALUE;
     type.data.data_value = value_type;
+
+    return type;
+}
+
+Type create_enum_typedef(TypeEnumData enum_type) {
+    Type type = (Type) { 0 };
+
+    type.type = TYPE_TYPE_ENUM;
+    type.data.data_enum = enum_type;
 
     return type;
 }
@@ -95,6 +126,7 @@ Type create_function_typedef(TypeFunctionData function_type) {
 ValueType get_typedef_value_type(Type type) {
     switch (type.type) {
         case TYPE_TYPE_VALUE:    return type.data.data_value;
+        case TYPE_TYPE_ENUM:     return VT_ENUM;
         case TYPE_TYPE_STRUCT:   return VT_STRUCT;
         case TYPE_TYPE_FUNCTION: return VT_FUNCTION;
         default: assert(false);  return VT_NONE;

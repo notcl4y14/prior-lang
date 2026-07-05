@@ -19,6 +19,7 @@ const char* ValueTypeNames[] = {
     [VT_UINT64]   = "u64",
     [VT_FLOAT32]  = "f32",
     [VT_FLOAT64]  = "f64",
+    [VT_ENUM]     = "enum",
     [VT_STRUCT]   = "struct",
     [VT_FUNCTION] = "function",
 };

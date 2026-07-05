@@ -102,6 +102,29 @@ void print_scope_structs(Scope* scope) {
     }
 }
 
+void print_scope_enums(Scope* scope) {
+    for (int32_t i = 0; i < scope->type_table.count; ++i) {
+        const Type* type = &scope->type_table.types_values[i];
+
+        if (type->type != TYPE_TYPE_ENUM) {
+            continue;
+        }
+
+        const char* type_ident = scope->type_table.types_idents[i];
+        const TypeEnumData* enum_data = &type->data.data_enum;
+
+        printf("enum %s {\n", type_ident);
+
+        for (int32_t j = 0; j < enum_data->count; ++j) {
+            printf("\t%s", enum_data->entries_names[j]);
+            printf(": %d", enum_data->entries_values[j].value.i32);
+            printf(",\n");
+        }
+
+        printf("}\n");
+    }
+}
+
 void scope_add_defer(Scope* scope, Node node) {
     scope->defers[scope->defer_count++] = node;
 }
