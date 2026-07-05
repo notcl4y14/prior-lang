@@ -18,27 +18,57 @@
   - [x] Implement positions for nodes
   - [x] Implement casts
   - [x] Implement comments (Kinda not)
-- [ ] Parser
-  - [ ] Create a free system for node tree
+- [x] Parser
+  - [x] Create a free system for node tree
     - Either by following the tree freeing every node
     - Or by allocating an array that records every AST allocation to free later
 - [ ] Semantics
   - [x] Implement error system
+  - [x] Implement MULTIPLE ERRORS system
+  - [x] Implement node positions into errors
+  - [x] Type Table
+    - [x] Custom types
+  - [x] Scoping
+  - [x] Let the semantics system declare global variables and declarations instead of the interpreter
+  - [x] Check for function call expressions
   - [ ] Implement auto-cast
-  - [ ] Custom types
-  - [ ] Scoping
-  - [ ] Let the semantics system declare global variables and declarations instead of the interpreter
 - [ ] Interpterer
+  - [x] Isolate function call scope to the global state
+    - The function you're calling should not see your local variables
   - [ ] Implement error system
   - [ ] Handle errors
     - [ ] Division by 0
     - [ ] Variable definition
     - [ ] Function Arguments and Parameters
-  - [x] Isolate function call scope to the global state
-    - The function you're calling should not see your local variables
+- [ ] Compilation
+  - [ ] Implement Abstract Assembly Representation
+  - [ ] Assembly Generation
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
+- [ ] Miscellaneous
+  - [ ] Free strings
 
-- [ ] Compilation
-  - [ ] Assembly Generation
+When the language has all or most of the TODO-s done, the development shifts onto the next stage with TODO below:
+
+- [ ] Lexer
+  - [ ] Implement string backslashes, interpolation
+  - [ ] Implement explicit integer variations (like 12345u64, 2.0f, 3423.2f32, 910i, 0xFFA45D, 123_000_000, 0b11000101)
+- [ ] AST
+  - [ ] Implement pointers and addresses
+  - [ ] Implement methods (functions assigned to structs)
+  - [ ] Implement function pointers
+  - [ ] Implement multiple-return values to functions (tuples)
+  - [ ] Implement imports
+  - [ ] Implement function modifiers
+    - [ ] extern
+  - [ ] Implement FFI
+- [ ] Abstract Assembly Representation
+  - [ ] Handle imports
+  - [ ] Handle static/dynamic libraries
+  - [ ] Handle FFI
+- [ ] Standard library (After imports are implemented)
+  - [ ] Input/Output library (std.io)
+    - [ ] Print functions
+    - [ ] Read function
+    - [ ] Maybe some console utils functions like clear terminal or set colors

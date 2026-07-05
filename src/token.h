@@ -60,6 +60,7 @@ typedef enum TokenType {
     TT_STRUCT,         // struct
     TT_VAR,            // var
     TT_CONST,          // const
+    TT_DEFER,          // defer
     TT_BREAK,          // break
     TT_CONTINUE,       // continue
     TT_RETURN,         // return

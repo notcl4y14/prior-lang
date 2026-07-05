@@ -9,6 +9,7 @@ const PrintNodeTree_Func PrintNodeTree_Funcs[] = {
     [NT_RETURN_STAT] = print_return_stat_tree,
     [NT_BREAK_STAT] = print_break_stat_tree,
     [NT_CONTINUE_STAT] = print_continue_stat_tree,
+    [NT_DEFER_STAT] = print_defer_stat_tree,
     [NT_VAR_STAT] = print_var_stat_tree,
     [NT_ENUM_STAT] = print_enum_stat_tree,
     [NT_STRUCT_STAT] = print_struct_stat_tree,
@@ -38,6 +39,7 @@ const PrintNodeTree_Func PrintNodeTree_Funcs[] = {
     [NT_STRING_LIT] = print_string_lit_tree,
     [NT_IDENT_LIT] = print_ident_lit_tree,
     [NT_ARRAY_LIT] = print_array_lit_tree,
+    [NT_COMPOUND_LIT] = print_compound_lit_tree,
 };
 
 void print_indent(int32_t indent) {
@@ -49,7 +51,7 @@ void print_indent(int32_t indent) {
 
 
 void print_node_tree(Node* node, int32_t indent) {
-    if (node->type < 0 || node->type >= (sizeof(PrintNodeTree_Funcs) / sizeof(PrintNodeTree_Func[0]))) {
+    if (node->type < 0 || node->type >= (sizeof(PrintNodeTree_Funcs) / sizeof(PrintNodeTree_Funcs[0]))) {
         printf("WARNING: %s not handled in print_node_tree\n", NodeTypeNames[node->type]);
         return;
     } else if (PrintNodeTree_Funcs[node->type] == NULL) {
@@ -101,6 +103,15 @@ void print_break_stat_tree(Node* node, int32_t indent) {
 void print_continue_stat_tree(Node* node, int32_t indent) {
     print_indent(indent);
     printf("ContinueStat\n");
+}
+
+void print_defer_stat_tree(Node* node, int32_t indent) {
+    NDeferStat defer_stat = node->data.defer_stat;
+
+    print_indent(indent);
+    printf("DeferStat:\n");
+
+    print_node_tree(defer_stat.expr, indent + 1);
 }
 
 void print_var_stat_tree(Node* node, int32_t indent) {
@@ -428,4 +439,13 @@ void print_array_lit_tree(Node* node, int32_t indent) {
     printf("ArrayLit:\n");
 
     print_node_array(&array_lit.values, indent + 1);
+}
+
+void print_compound_lit_tree(Node* node, int32_t indent) {
+    NCompoundLit compound_lit = node->data.compound_lit;
+
+    print_indent(indent);
+    printf("CompoundLit:\n");
+
+    print_node_array(&compound_lit.values, indent + 1);
 }
