@@ -22,7 +22,7 @@ enum MyEnum {
     ELEMENT_1,
     ELEMENT_2,
     AJDKSFJK,
-    SKJHDFIE,
+    SKJHDFIE = 100,
 }
 
 fn main(): i32 {

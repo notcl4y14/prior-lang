@@ -1,4 +1,5 @@
 #include "error.h"
+#include "eval.h"
 #include "scope.h"
 #include "token.h"
 #include "type.h"
@@ -119,6 +120,15 @@ SemRes process_enum_stat(Semantics* s, Scope* scope, Node* node) {
         if (entry_data->value != NULL && entry_data->value->type != NT_NONE) {
             // result = process_node(s, scope, entry_data->value);
             // if (result.error) return result;
+
+            result_value = evaluate_expr_node(scope, entry_data->value).value;
+
+            if (result_value.type == VT_NONE) {
+                char errmsg[512] = { 0 };
+                sprintf(errmsg, "Undefined variable '%s'", entry_data->value->data.ident_lit.value);
+                semantics_add_error(s, errmsg, entry_data->value->left_pos);
+                return (SemRes) { { 0 }, true };
+            }
         } else {
             result_value.type = VT_INT32;
             result_value.value.i32 = i;

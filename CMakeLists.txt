@@ -5,6 +5,7 @@ project(priorlang VERSION 1.0 LANGUAGES C)
 add_library(prior_core STATIC
     src/ast.c
     src/error.c
+    src/eval.c
     src/interp.c
     src/lexer.c
     src/mem.c
