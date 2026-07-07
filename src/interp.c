@@ -107,7 +107,7 @@ void init_compound_vars(NCompoundLit* compound, const char*** comp_k, Node*** co
 }
 
 Value instantiate_struct
-   (Type st, TypeTable* tt, Scope* scope, Interpreter* interp,
+   (Definition st, DefTable* dt, Scope* scope, Interpreter* interp,
     const char** comp_k, Node** comp_v, size_t comp_c)
 {
     /***
@@ -122,9 +122,9 @@ Value instantiate_struct
 
     /* Inserting compound values into the fields */
     for (int32_t i = 0; i < st.data.data_struct.count; ++i) {
-        Type field_type = type_table_get_type(tt, st.data.data_struct.fields_types[i]);
-        ValueType field_value_type = get_typedef_value_type(field_type);
-        char* st_field_ident = st.data.data_struct.fields_names[i];
+        Definition field_typedef = def_table_get_def(dt, st.data.data_struct.fields_types[i]);
+        ValueType  field_value_type = get_type_value_type(field_typedef.data.data_type);
+        char* st_field_ident = st.data.data_struct.fields_idents[i];
 
         sv_data->fields[i] = st_field_ident;
         sv_data->values[i].type = field_value_type;
@@ -174,16 +174,16 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
     char* ident_name = var_stat.ident->data.ident_lit.value;
     char* type_name = var_stat.type->data.ident_lit.value;
 
-    Type type = type_table_get_type(&interp->scope->type_table, type_name);
+    Definition type = def_table_get_def(&interp->scope->def_table, type_name);
 
-    scope_declare_var(scope, ident_name, type);
+    scope_declare_var(scope, ident_name, type.data.data_type);
 
     /* Yes value, evaluating */
     if (var_stat.value != NULL) {
         Value value = (Value) { 0 };
 
         switch (type.type) {
-            case TYPE_TYPE_STRUCT: {
+            case DEF_TYPE_STRUCT: {
                 assert(var_stat.value->type == NT_COMPOUND_LIT);
 
                 const char** comp_k = NULL;
@@ -191,7 +191,7 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
                 size_t comp_c = 0;
                 init_compound_vars(&var_stat.value->data.compound_lit, &comp_k, &comp_v, &comp_c);
 
-                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, comp_k, comp_v, comp_c);
+                value = instantiate_struct(type, &interp->scope->def_table, scope, interp, comp_k, comp_v, comp_c);
 
                 free(comp_v);
                 comp_v = NULL;
@@ -212,13 +212,13 @@ EvalResult evaluate_var_stat(Interpreter* interp, Scope* scope, Node* node) {
         Value value = (Value) { 0 };
 
         switch (type.type) {
-            case TYPE_TYPE_STRUCT:
+            case DEF_TYPE_STRUCT:
                 /***
                  * A little trick: We're telling the struct instantiator that
                  * the amount of compound entries is zero and it's going to
                  * zero out each entry evaluation.
                  */
-                value = instantiate_struct(type, &interp->scope->type_table, scope, interp, NULL, NULL, 0);
+                value = instantiate_struct(type, &interp->scope->def_table, scope, interp, NULL, NULL, 0);
                 break;
 
             default:
@@ -240,14 +240,14 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
 
     char* name = func_stat.ident->data.ident_lit.value;
     char* type_name = func_stat.type->data.ident_lit.value;
-    Type type = type_table_get_type(&scope->type_table, type_name);
+    Definition type = scope_get_def(scope, type_name);
 
-    scope_declare_var(scope, name, type);
+    scope_declare_var(scope, name, type.data.data_type);
 
     ValueFunction fn_value = (ValueFunction) {
         .params = { {} },
         .node = func_stat.body,
-        .return_type = type,
+        .return_type = type.data.data_type,
     };
 
     NodeArr* params = &func_stat.params;
@@ -257,11 +257,11 @@ EvalResult evaluate_fn_stat(Interpreter* interp, Scope* scope, Node* node) {
 
         char* param_name = param->data.parameter.ident->data.ident_lit.value;
         // TODO: Handle array types
-        Type param_type = type_table_get_type(&scope->type_table, param->data.parameter.type->data.ident_lit.value);
+        Definition param_type = scope_get_def(scope, param->data.parameter.type->data.ident_lit.value);
 
         fn_value.params[i] = (ValueFunctionParam) {
             .name = param_name,
-            .type = param_type,
+            .type = param_type.data.data_type,
         };
     }
 

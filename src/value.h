@@ -54,5 +54,6 @@ typedef struct Value {
 void value_to_zero(Value* value);
 ValueType get_value_type_from_string(const char* string);
 Value cast_value(Value value, ValueType cast_type);
+char* value_as_string(Value value);
 
 #endif

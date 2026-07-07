@@ -25,11 +25,11 @@ typedef struct SemRes {
 SemRes process_node(Semantics* s, Scope* scope, Node* node);
 
 SemRes process_integer_lit(Semantics* s, Scope* scope, Node* node) {
-    return (SemRes) { create_value_typedef(VT_INT32), false };
+    return (SemRes) { TYPE_VALUE_INT32, false };
 }
 
 SemRes process_float_lit(Semantics* s, Scope* scope, Node* node) {
-    return (SemRes) { create_value_typedef(VT_FLOAT32), false };
+    return (SemRes) { TYPE_VALUE_FLOAT32, false };
 }
 
 SemRes process_ident_lit(Semantics* s, Scope* scope, Node* node) {
@@ -40,7 +40,7 @@ SemRes process_ident_lit(Semantics* s, Scope* scope, Node* node) {
         char errmsg[512] = { 0 };
         sprintf(errmsg, "Accessing undefined variable \"%s\"", ident_lit.value);
         semantics_add_error(s, errmsg, node->left_pos);
-        return (SemRes) { { 0 }, true };
+        return (SemRes) { TYPE_NONE, true };
     }
 
     Type type = scope_get_var_type(scope, ident_lit.value);
@@ -52,18 +52,18 @@ SemRes process_return_stat(Semantics* s, Scope* scope, Node* node) {
     NRetStat ret_stat = node->data.ret_stat;
 
     if (ret_stat.expr == NULL) {
-        return (SemRes) { { 0 }, false };
+        return (SemRes) { TYPE_NONE, false };
     }
 
     return process_node(s, scope, ret_stat.expr);
 }
 
 SemRes process_break_stat(Semantics* s, Scope* scope, Node* node) {
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_continue_stat(Semantics* s, Scope* scope, Node* node) {
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_defer_stat(Semantics* s, Scope* scope, Node* node) {
@@ -79,14 +79,14 @@ SemRes process_var_stat(Semantics* s, Scope* scope, Node* node) {
     char* type_name = var_stat.type->data.ident_lit.value;
 
     // TODO: Implement a hashmap that stores types and their names
-    Type variable_type = scope_get_type(scope, type_name);
+    Definition variable_type = scope_get_def(scope, type_name);
 
-    if (variable_type.type == TYPE_TYPE_NONE) {
+    if (variable_type.type == DEF_TYPE_NONE) {
         // TODO: bad code, sprintf, fix.
         char emsg[512] = {0};
         sprintf(emsg, "Type '%s' is not defined!", type_name);
         semantics_add_error(s, emsg, var_stat.type->left_pos);
-        return (SemRes) { { 0 }, true };
+        return (SemRes) { TYPE_NONE, true };
     }
 
     if (var_stat.value != NULL) {
@@ -97,10 +97,10 @@ SemRes process_var_stat(Semantics* s, Scope* scope, Node* node) {
     }
 
     /* Storing the variable in the scope */
-    scope_declare_var(scope, ident_name, variable_type);
-    scope_define_var(scope, ident_name, (Value) { .type = get_typedef_value_type(variable_type), {} });
+    scope_declare_var(scope, ident_name, variable_type.data.data_type);
+    scope_define_var(scope, ident_name, (Value) { .type = get_type_value_type(variable_type.data.data_type), {} });
 
-    return (SemRes) { variable_type, false };
+    return (SemRes) { variable_type.data.data_type, false };
 }
 
 SemRes process_enum_stat(Semantics* s, Scope* scope, Node* node) {
@@ -108,7 +108,7 @@ SemRes process_enum_stat(Semantics* s, Scope* scope, Node* node) {
 
     const NEnumStat* enum_stat = &node->data.enum_stat;
 
-    TypeEnumData type_enum_data = create_type_enum_data();
+    EnumDefData enum_def_data = create_enum_def_data();
 
     for (int32_t i = 0; i < enum_stat->entries.count; ++i) {
         const NEnumEntry* entry_data = &enum_stat->entries.nodes[i].data.enum_entry;
@@ -118,31 +118,28 @@ SemRes process_enum_stat(Semantics* s, Scope* scope, Node* node) {
 
         // TODO: Enum entry assignment support
         if (entry_data->value != NULL && entry_data->value->type != NT_NONE) {
-            // result = process_node(s, scope, entry_data->value);
-            // if (result.error) return result;
-
             result_value = evaluate_expr_node(scope, entry_data->value).value;
 
             if (result_value.type == VT_NONE) {
                 char errmsg[512] = { 0 };
                 sprintf(errmsg, "Undefined variable '%s'", entry_data->value->data.ident_lit.value);
                 semantics_add_error(s, errmsg, entry_data->value->left_pos);
-                return (SemRes) { { 0 }, true };
+                return (SemRes) { TYPE_NONE, true };
             }
         } else {
             result_value.type = VT_INT32;
             result_value.value.i32 = i;
         }
 
-        type_enum_data.entries_names[i] = entry_identstr;
-        type_enum_data.entries_values[i] = result_value;
-        type_enum_data.count++;
+        enum_def_data.entries_idents[i] = entry_identstr;
+        enum_def_data.entries_values[i] = result_value;
+        enum_def_data.count++;
     }
 
     const char* enum_identstr = enum_stat->ident->data.ident_lit.value;
-    type_table_assign_type(&scope->type_table, enum_identstr, create_enum_typedef(type_enum_data));
+    def_table_assign_def(&scope->def_table, enum_identstr, create_enum_def(enum_identstr, enum_def_data));
 
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
@@ -152,7 +149,7 @@ SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
 
     NFuncStat func_stat = node->data.func_stat;
 
-    TypeFunctionData func_data = create_type_function_data();
+    FuncDefData func_def_data = create_func_def_data();
 
     Scope sub_scope = create_scope(scope);
 
@@ -161,23 +158,23 @@ SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
         char* param_strident = param->ident->data.ident_lit.value;
         char* param_strtype  = param->type->data.ident_lit.value;
 
-        Type param_type = scope_get_type(scope, param_strtype);
+        Definition param_type = scope_get_def(scope, param_strtype);
 
-        if (param_type.type == TYPE_TYPE_NONE) {
+        if (param_type.type == DEF_TYPE_NONE) {
             // TODO: bad code, sprintf, fix.
             char emsg[512] = {0};
             sprintf(emsg, "Type '%s' is not defined!", param_strtype);
             semantics_add_error(s, emsg, param->type->left_pos);
-            return (SemRes) { { 0 }, true };
+            return (SemRes) { TYPE_NONE, true };
         }
 
-        func_data.params_names[i] = param_strident;
-        func_data.params_types[i] = param_strtype;
-        func_data.count++;
+        func_def_data.params_idents[i] = param_strident;
+        func_def_data.params_types[i] = param_strtype;
+        func_def_data.count++;
 
-        ValueType param_vtype = get_typedef_value_type(param_type);
+        ValueType param_vtype = get_type_value_type(param_type.data.data_type);
 
-        scope_declare_var(&sub_scope, param_strident, param_type);
+        scope_declare_var(&sub_scope, param_strident, param_type.data.data_type);
         scope_define_var(
             &sub_scope,
             param_strident,
@@ -186,14 +183,14 @@ SemRes process_fn_stat(Semantics* s, Scope* scope, Node* node) {
     }
 
     const char* func_name = func_stat.ident->data.ident_lit.value;
-    type_table_assign_type(&scope->type_table, func_name, create_function_typedef(func_data));
+    def_table_assign_def(&scope->def_table, func_name, create_func_def(func_name, func_def_data));
 
     result = process_node(s, &sub_scope, func_stat.body);
     if (result.error) return result;
 
     free_scope(&sub_scope);
 
-    return (SemRes) { { 0 }, true };
+    return (SemRes) { TYPE_NONE, true };
 }
 
 
@@ -213,7 +210,7 @@ SemRes process_if_stat(Semantics* s, Scope* scope, Node* node) {
         if (result.error) return result;
     }
 
-    return (SemRes) { { 0 }, true };
+    return (SemRes) { TYPE_NONE, true };
 }
 
 SemRes process_while_stat(Semantics* s, Scope* scope, Node* node) {
@@ -227,7 +224,7 @@ SemRes process_while_stat(Semantics* s, Scope* scope, Node* node) {
     result = process_node(s, scope, while_stat.body);
     if (result.error) return result;
 
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_block(Semantics* s, Scope* scope, Node* node) {
@@ -304,34 +301,34 @@ SemRes process_call_expr(Semantics* s, Scope* scope, Node* node) {
 
     const NCallExpr* call_expr = &node->data.call_expr;
 
-    Type function_type = scope_get_type(scope, call_expr->member->data.ident_lit.value);
+    Definition func_typedef = scope_get_def(scope, call_expr->member->data.ident_lit.value);
 
     /* Check if the call expression tries to call a non-callable identifier */
-    if (function_type.type != TYPE_TYPE_FUNCTION) {
+    if (func_typedef.type != DEF_TYPE_FUNCTION) {
         char errmsg[512] = { 0 };
         sprintf(errmsg, "'%s' is not callable", call_expr->member->data.ident_lit.value);
         semantics_add_error(s, errmsg, call_expr->member->left_pos);
-        return (SemRes) { { 0 }, true };
+        return (SemRes) { TYPE_NONE, true };
     }
 
-    const TypeFunctionData* function_data = &function_type.data.data_function;
+    const FuncDefData* func_data = &func_typedef.data.data_function;
 
     /* Check for argument-parameter matching */
     for (int32_t i = 0; i < call_expr->args.count; ++i) {
         const Node*      arg_node = &call_expr->args.nodes[i];
         const NArgument* arg_data = &arg_node->data.argument;
 
-        const char* param_strname = function_data->params_names[i];
-        const char* param_strtype = function_data->params_types[i];
+        const char* param_strident = func_data->params_idents[i];
+        const char* param_strtype  = func_data->params_types[i];
 
         result = process_node(s, scope, arg_data->expr);
         if (result.error) return result;
 
-        // Type      arg_type = result.type;
-        ValueType arg_vtype = get_typedef_value_type(result.type);
+        // Type      arg_type  = result.type;
+        ValueType arg_vtype = get_type_value_type(result.type);
 
-        Type      param_type = scope_get_type(scope, param_strtype);
-        ValueType param_vtype = get_typedef_value_type(param_type);
+        Definition param_type  = scope_get_def(scope, param_strtype);
+        ValueType  param_vtype = get_type_value_type(param_type.data.data_type);
 
         /* First we attempt to auto-cast */
         // if (arg_vtype != param_vtype) {
@@ -343,24 +340,24 @@ SemRes process_call_expr(Semantics* s, Scope* scope, Node* node) {
         if (arg_vtype != param_vtype) {
             char errmsg[512] = { 0 };
             // TODO: Get argument's type name
-            sprintf(errmsg, "Argument at %d of type %s does not match with parameter %s: %s", i + 1, "UNKNOWN", param_strname, param_strtype);
+            sprintf(errmsg, "Argument at %d of type %s does not match with parameter %s: %s", i + 1, "UNKNOWN", param_strident, param_strtype);
             semantics_add_error(s, errmsg, arg_node->left_pos);
-            return (SemRes) { { 0 }, true };
+            return (SemRes) { TYPE_NONE, true };
         }
     }
 
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_cast_expr(Semantics* s, Scope* scope, Node* node) {
-    Type casted_type = scope_get_type(scope, node->data.cast_expr.type->data.ident_lit.value);
-    return (SemRes) { casted_type, false };
+    Definition casted_type = scope_get_def(scope, node->data.cast_expr.type->data.ident_lit.value);
+    return (SemRes) { casted_type.data.data_type, false };
 }
 
 SemRes process_struct_stat(Semantics* s, Scope* scope, Node* node) {
     NStructStat struct_stat = node->data.struct_stat;
 
-    TypeStructData type_struct_data = create_type_struct_data();
+    StructDefData struct_def_data = create_struct_def_data();
 
     // Process each field and assign them types
     for (size_t i = 0; i < struct_stat.fields.count; i++) {
@@ -370,23 +367,23 @@ SemRes process_struct_stat(Semantics* s, Scope* scope, Node* node) {
         char* field_type = field.type->data.ident_lit.value;
 
         /* Check if the type exists in the Type Table */
-        if (scope_get_type(scope, field_type).type == TYPE_TYPE_NONE) {
+        if (scope_get_def(scope, field_type).type == DEF_TYPE_NONE) {
             // TODO: bad code, sprintf, fix.
             char emsg[512] = {0};
             sprintf(emsg, "Undefined \"%s\" type", field_type);
             semantics_add_error(s, emsg, field.type->left_pos);
-            return (SemRes) { { 0 }, false };
+            return (SemRes) { TYPE_NONE, false };
         }
 
-        type_struct_data.fields_names[i] = field_name;
-        type_struct_data.fields_types[i] = field_type;
-        type_struct_data.count++;
+        struct_def_data.fields_idents[i] = field_name;
+        struct_def_data.fields_types[i] = field_type;
+        struct_def_data.count++;
     }
 
     const char* struct_ident = struct_stat.ident->data.ident_lit.value;
-    type_table_assign_type(&scope->type_table, struct_ident, create_struct_typedef(type_struct_data));
+    def_table_assign_def(&scope->def_table, struct_ident, create_struct_def(struct_ident, struct_def_data));
 
-    return (SemRes) { { 0 }, false };
+    return (SemRes) { TYPE_NONE, false };
 }
 
 SemRes process_node(Semantics* s, Scope* scope, Node* node) {

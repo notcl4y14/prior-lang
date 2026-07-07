@@ -3,13 +3,14 @@
 #include "type.h"
 #include "value.h"
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 Scope create_scope(Scope* parent) {
     Scope scope = (Scope) { 0 };
     scope.parent = parent;
-    scope.type_table = create_type_table();
+    scope.def_table = create_def_table();
     scope.defer_count = 0;
     scope.is_deferred = false;
     return scope;
@@ -22,8 +23,10 @@ void free_scope(Scope* scope) {
         }
     }
 
-    free_type_table(&scope->type_table);
+    free_def_table(&scope->def_table);
 }
+
+
 
 void scope_declare_var(Scope* scope, const char* name, Type type) {
     for (int32_t i = 0; i < 256; ++i) {
@@ -81,21 +84,57 @@ Type scope_get_var_type(Scope* scope, const char* name) {
     return (Type) { 0 };
 }
 
-void print_scope_structs(Scope* scope) {
-    for (int32_t i = 0; i < scope->type_table.count; ++i) {
-        const Type* type = &scope->type_table.types_values[i];
 
-        if (type->type != TYPE_TYPE_STRUCT) {
+
+void scope_add_defer(Scope* scope, Node node) {
+    scope->defers[scope->defer_count++] = node;
+}
+
+
+
+void print_scope_functions(Scope* scope) {
+    for (int32_t i = 0; i < scope->def_table.count; ++i) {
+        const Definition* def = &scope->def_table.defs_data[i];
+
+        if (def->type != DEF_TYPE_FUNCTION) {
             continue;
         }
 
-        const char* type_ident = scope->type_table.types_idents[i];
-        const TypeStructData* struct_ = &type->data.data_struct;
+        const char* def_ident = scope->def_table.defs_idents[i];
+        const FuncDefData* func_data = &def->data.data_function;
 
-        printf("struct %s {\n", type_ident);
+        printf("fn %s (", def_ident);
 
-        for (int32_t j = 0; j < struct_->count; ++j) {
-            printf("\t%s: %s,\n", struct_->fields_names[j], struct_->fields_types[j]);
+        for (int32_t i = 0; i < func_data->count; ++i) {
+            const char* param_ident = func_data->params_idents[i];
+            const char* param_type  = func_data->params_types[i];
+
+            printf("%s: %s", param_ident, param_type);
+
+            if (i != func_data->count - 1) {
+                printf(", ");
+            }
+        }
+
+        printf(");\n");
+    }
+}
+
+void print_scope_structs(Scope* scope) {
+    for (int32_t i = 0; i < scope->def_table.count; ++i) {
+        const Definition* def = &scope->def_table.defs_data[i];
+
+        if (def->type != DEF_TYPE_STRUCT) {
+            continue;
+        }
+
+        const char* def_ident = scope->def_table.defs_idents[i];
+        const StructDefData* struct_data = &def->data.data_struct;
+
+        printf("struct %s {\n", def_ident);
+
+        for (int32_t j = 0; j < struct_data->count; ++j) {
+            printf("\t%s: %s,\n", struct_data->fields_idents[j], struct_data->fields_types[j]);
         }
 
         printf("}\n");
@@ -103,21 +142,21 @@ void print_scope_structs(Scope* scope) {
 }
 
 void print_scope_enums(Scope* scope) {
-    for (int32_t i = 0; i < scope->type_table.count; ++i) {
-        const Type* type = &scope->type_table.types_values[i];
+    for (int32_t i = 0; i < scope->def_table.count; ++i) {
+        const Definition* def = &scope->def_table.defs_data[i];
 
-        if (type->type != TYPE_TYPE_ENUM) {
+        if (def->type != DEF_TYPE_ENUM) {
             continue;
         }
 
-        const char* type_ident = scope->type_table.types_idents[i];
-        const TypeEnumData* enum_data = &type->data.data_enum;
+        const char* def_ident = scope->def_table.defs_idents[i];
+        const EnumDefData* enum_data = &def->data.data_enum;
 
-        printf("enum %s {\n", type_ident);
+        printf("enum %s {\n", def_ident);
 
         for (int32_t j = 0; j < enum_data->count; ++j) {
-            printf("\t%s", enum_data->entries_names[j]);
-            printf(": %d", enum_data->entries_values[j].value.i32);
+            printf("\t%s", enum_data->entries_idents[j]);
+            // printf(": %s", value_as_string(enum_data->entries_values[j]));
             printf(",\n");
         }
 
@@ -125,18 +164,16 @@ void print_scope_enums(Scope* scope) {
     }
 }
 
-void scope_add_defer(Scope* scope, Node node) {
-    scope->defers[scope->defer_count++] = node;
-}
 
-Type scope_get_type(Scope* tt, const char* ident) {
-    Type type = type_table_get_type(&tt->type_table, ident);
 
-    if (type.type == TYPE_TYPE_NONE) {
-        if (tt->parent != NULL) {
-            type = scope_get_type(tt->parent, ident);
+Definition scope_get_def(Scope* scope, const char* ident) {
+    Definition def = def_table_get_def(&scope->def_table, ident);
+
+    if (def.type == DEF_TYPE_NONE) {
+        if (scope->parent != NULL) {
+            def = scope_get_def(scope->parent, ident);
         }
     }
 
-    return type;
+    return def;
 }
