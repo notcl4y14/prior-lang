@@ -1,6 +1,8 @@
 #include <interp.h>
 #include <value.h>
 #include <ast.h>
+#include "aar.h"
+#include "asmgen.h"
 #include "parser.h"
 #include "error.h"
 #include <lexer.h>
@@ -20,7 +22,7 @@ bool show_stages = false;
 bool show_tokens = false;
 bool show_ast = false;
 bool show_semantics = false;
-bool show_bytecode = false;
+bool show_asm = false;
 
 void print_tokens(TokenArray* tokens) {
     printf("\n==== TOKENS ====\n");
@@ -51,6 +53,7 @@ void usage() {
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
     printf("        --p-semantics - Print the Semantics result of the AST\n");
+    printf("        --p-asm    - Print the Assembly code result\n");
     printf("    interpret <file> - Interpret and run the file\n");
     printf("        --p-stages - Print the stages of the compiling process\n");
     printf("        --p-tokens - Print the tokens of the code\n");
@@ -62,7 +65,7 @@ void compile(int32_t argc, char* argv[]) {
     show_stages = args_contains(argc, argv, "--p-stages");
     show_tokens = args_contains(argc, argv, "--p-tokens");
     show_ast = args_contains(argc, argv, "--p-ast");
-    show_bytecode = args_contains(argc, argv, "--p-bytecode");
+    show_asm = args_contains(argc, argv, "--p-asm");
 
     /* Lexer Stage */
     char* filename = argv[2];
@@ -147,27 +150,28 @@ void compile(int32_t argc, char* argv[]) {
         return;
     }
 
-    // if (show_stages)
-    //     printf("Generating bytecode...\n");
+    /* AAR Stage */
+    if (show_stages)
+        printf("Parsing AAR...\n");
 
-    // Bytegen bytegen = {0};
-    // init_bytegen(&bytegen, result);
+    AARParser aar_parser = create_aar_parser(&result);
+    aar_parser_parse(&aar_parser);
 
-    // bytegen_generate(&bytegen);
+    /* Assembly Generation Stage */
+    if (show_stages)
+        printf("Generating Assembly code...\n");
 
-    // if (show_bytecode) {
-    //     printf("\n==== BYTECODE ====\n");
-    //     print_bytecode(&bytegen.result);
-    //     printf("\n");
-    // }
+    AsmGen asm_gen = create_asm_gen(&aar_parser.result);
+    asm_gen_nasm(&asm_gen);
 
-    // FILE* out_file = fopen("out.prb", "w");
+    if (show_asm) {
+        printf("\n==== Assembly ====\n");
+        printf("%s", asm_gen.result);
+    }
 
-    // fwrite(bytegen.result.bytes, sizeof(uint8_t), bytegen.result.count, out_file);
-
-    // fclose(out_file);
-
-    // free_bytecode(&bytegen.result);
+    free_asm_gen(&asm_gen);
+    free_aar_parser(&aar_parser);
+    free_parser(&parser);
     free_token_array(&token_array);
     free_lexer(&lexer);
 

@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10)
 project(priorlang VERSION 1.0 LANGUAGES C)
 
 add_library(prior_core STATIC
+    src/asmgen/asmgen_nasm.c
+    src/aar.c
+    src/asmgen.c
     src/ast.c
     src/error.c
     src/eval.c

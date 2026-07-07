@@ -41,13 +41,20 @@
     - [ ] Variable definition
     - [ ] Function Arguments and Parameters
 - [ ] Compilation
-  - [ ] Implement Abstract Assembly Representation
+  - [x] Implement Abstract Assembly Representation
+  - [ ] Implement AAR Parser
+  - [ ] Print AAR
   - [ ] Assembly Generation
+    - [ ] NASM
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
+- [ ] Cleaning up
+  - [ ] Categorize modules into directories
 - [ ] Miscellaneous
   - [ ] Free strings
+  - [ ] Free AAR Parser nodes
+  - [ ] Free some unfreed elements when error happens
 
 When the language has all or most of the TODO-s done, the development shifts onto the next stage with TODO below:
 
