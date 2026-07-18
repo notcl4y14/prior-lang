@@ -31,21 +31,35 @@ typedef enum AARNodeType {
 
     AAR_NT_PROGRAM,
 
+    // label
     AAR_NT_LABEL_STAT,
+    // move
     AAR_NT_MOV_STAT,
+    // mathematical operations
     AAR_NT_ADD_STAT,
     AAR_NT_SUB_STAT,
     AAR_NT_MUL_STAT,
     AAR_NT_DIV_STAT,
+    // logical operations
     AAR_NT_AND_STAT,
     AAR_NT_OR_STAT,
     AAR_NT_NOT_STAT,
     AAR_NT_XOR_STAT,
+    // comparative operations
+    AAR_NT_CMP_STAT,
+    AAR_NT_JMP_STAT,
+    AAR_NT_JEQ_STAT,
+    AAR_NT_JNE_STAT,
+    AAR_NT_JLE_STAT,
+    AAR_NT_JGE_STAT,
+    AAR_NT_JLT_STAT,
+    AAR_NT_JGT_STAT,
 
     AAR_NT_BIN_EXPR,
     AAR_NT_ADDR_EXPR,
 
     AAR_NT_INT_LIT,
+    AAR_NT_IDENT_LIT,
     AAR_NT_REG_LIT,
 } AARNodeType;
 
@@ -102,19 +116,33 @@ typedef struct AARNodeXor {
     AARNode* right;
 } AARNodeXor;
 
+typedef struct AARNodeCmp {
+    AARNode* left;
+    AARNode* right;
+} AARNodeCmp;
+
+typedef struct AARNodeJmp {
+    AARNode* target;
+} AARNodeJmp;
+
 typedef struct AARNodeBinExpr {
     AARNode* left;
     AARNode* right;
 } AARNodeBinExpr;
 
-typedef struct AARNodeReg {
-    AARRegister reg;
-} AARNodeReg;
-
 typedef struct AARNodeInt {
     char*  value;
     size_t size;
 } AARNodeInt;
+
+typedef struct AARNodeIdent {
+    char*  ident;
+    size_t size;
+} AARNodeIdent;
+
+typedef struct AARNodeReg {
+    AARRegister reg;
+} AARNodeReg;
 
 typedef struct AARNode {
     AARNodeType type;
@@ -130,8 +158,11 @@ typedef struct AARNode {
         AARNodeOr      or_stat;
         AARNodeNot     not_stat;
         AARNodeXor     xor_stat;
-        AARNodeReg     reg_lit;
+        AARNodeCmp     cmp_stat;
+        AARNodeJmp     jmp_stat;
         AARNodeInt     int_lit;
+        AARNodeIdent   ident_lit;
+        AARNodeReg     reg_lit;
     } data;
 } AARNode;
 

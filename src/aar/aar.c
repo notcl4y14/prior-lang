@@ -14,6 +14,66 @@ AARNode* aar_new_node(AARNode node) {
 
 AARNode aar_parse_node(AARParser* parser, const Node* node);
 
+AARNode aar_parse_if_stat(AARParser* parser, const Node* node) {
+    const NIfStat* data = &node->data.if_stat;
+
+    // TODO: Handle non-binary expressions in if statements
+    if (data->condition->type != NT_BIN_EXPR) {
+        assert(false && "Only binary expressions for now.");
+    }
+
+    // TODO: Handle nested labels
+
+    const NBinExpr* condition_data = &data->condition->data.bin_expr;
+
+    char* jump_label = calloc(8, sizeof(char));
+    sprintf(jump_label, "L%d", ++parser->label_count);
+
+    AARNode label_stat = (AARNode) { 0 };
+    label_stat.type = AAR_NT_LABEL_STAT;
+    label_stat.data.label_stat.name = jump_label;
+
+    AARNode jump_stat = (AARNode) { 0 };
+    jump_stat.data.jmp_stat.target = aar_new_node((AARNode) {
+        .type = AAR_NT_IDENT_LIT,
+        .data.ident_lit = (AARNodeIdent) {
+            .ident = jump_label,
+        },
+    });
+
+    switch (condition_data->op) {
+        case TT_EQUALS:         jump_stat.type = AAR_NT_JNE_STAT; break;
+        case TT_NOT_EQUALS:     jump_stat.type = AAR_NT_JEQ_STAT; break;
+        case TT_LESS:           jump_stat.type = AAR_NT_JGE_STAT; break;
+        case TT_LESS_EQUALS:    jump_stat.type = AAR_NT_JGT_STAT; break;
+        case TT_GREATER:        jump_stat.type = AAR_NT_JLE_STAT; break;
+        case TT_GREATER_EQUALS: jump_stat.type = AAR_NT_JLT_STAT; break;
+        default: assert(false); break;
+    }
+
+    // We checked the registers already
+    // parser->i32_reg -= 1;
+
+    // printf("%d\n", jump_stat.type);
+
+    aar_parse_node(parser, data->condition);
+    parser->result.data.program.nodes[parser->result.data.program.count++] = jump_stat;
+
+    // We don't need any second labels, so we parse the block ourselves
+    if (data->body->type == NT_BLOCK) {
+        for (int32_t i = 0; i < data->body->data.block.nodes.count; ++i) {
+            aar_parse_node(parser, &data->body->data.block.nodes.nodes[i]);
+        }
+    } else {
+        aar_parse_node(parser, data->body);
+    }
+    // printf("%d\n", label_stat.type);
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = label_stat;
+
+    return (AARNode) { 0 };
+}
+
 AARNode aar_parse_block(AARParser* parser, const Node* node) {
     const NBlock* data = &node->data.block;
 
@@ -76,6 +136,19 @@ AARNode aar_parse_bin_expr(AARParser* parser, const Node* node) {
             result.data.div_stat = (AARNodeDiv) {
                 .src = aar_new_node(src),
                 .dst = aar_new_node(dst),
+            };
+            break;
+
+        case TT_EQUALS:
+        case TT_NOT_EQUALS:
+        case TT_LESS:
+        case TT_GREATER:
+        case TT_LESS_EQUALS:
+        case TT_GREATER_EQUALS:
+            result.type = AAR_NT_CMP_STAT;
+            result.data.cmp_stat = (AARNodeCmp) {
+                .left  = aar_new_node(src),
+                .right = aar_new_node(dst),
             };
             break;
 
@@ -148,6 +221,7 @@ AARNode aar_parse_int_lit(AARParser* parser, const Node* node) {
 
 AARNode aar_parse_node(AARParser* parser, const Node* node) {
     switch (node->type) {
+        case NT_IF_STAT:     return aar_parse_if_stat(parser, node);
         case NT_BLOCK:       return aar_parse_block(parser, node);
         case NT_BIN_EXPR:    return aar_parse_bin_expr(parser, node);
         case NT_INTEGER_LIT: return aar_parse_int_lit(parser, node);

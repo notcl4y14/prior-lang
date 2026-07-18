@@ -99,6 +99,113 @@ char* eval_div_stat(AARNode* node) {
     return strbuf;
 }
 
+char* eval_cmp_stat(AARNode* node) {
+    AARNodeCmp* data = &node->data.cmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* left = eval(data->left);
+    char* right = eval(data->right);
+
+    sprintf(strbuf, "cmp %s, %s", right, left);
+
+    free(right);
+    free(left);
+
+    return strbuf;
+}
+
+char* eval_jmp_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jmp %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jeq_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jeq %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jne_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jne %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jlt_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jlt %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jle_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jle %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jgt_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jgt %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
+char* eval_jge_stat(AARNode* node) {
+    AARNodeJmp* data = &node->data.jmp_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* target = eval(data->target);
+    sprintf(strbuf, "jge %s", target);
+
+    free(target);
+
+    return strbuf;
+}
+
 char* eval_reg_lit(AARNode* node) {
     AARNodeReg* data = &node->data.reg_lit;
 
@@ -133,6 +240,18 @@ char* eval_int_lit(AARNode* node) {
     return strbuf;
 }
 
+char* eval_ident_lit(AARNode* node) {
+    AARNodeIdent* data = &node->data.ident_lit;
+
+    // TODO: Handle ident size
+    char* strbuf = calloc(16, sizeof(char));
+    // printf("%s %ld\n", data->ident, data->size);
+    // memcpy(strbuf, data->ident, data->size);
+    strncpy(strbuf, data->ident, 16);
+
+    return strbuf;
+}
+
 char* eval(AARNode* node) {
     switch (node->type) {
         case AAR_NT_LABEL_STAT: return eval_label_stat(node);
@@ -141,9 +260,18 @@ char* eval(AARNode* node) {
         case AAR_NT_SUB_STAT: return eval_sub_stat(node);
         case AAR_NT_MUL_STAT: return eval_mul_stat(node);
         case AAR_NT_DIV_STAT: return eval_div_stat(node);
-        case AAR_NT_REG_LIT:  return eval_reg_lit(node);
-        case AAR_NT_INT_LIT:  return eval_int_lit(node);
-        default: assert(false); break;
+        case AAR_NT_CMP_STAT: return eval_cmp_stat(node);
+        case AAR_NT_JMP_STAT: return eval_jmp_stat(node);
+        case AAR_NT_JEQ_STAT: return eval_jeq_stat(node);
+        case AAR_NT_JNE_STAT: return eval_jne_stat(node);
+        case AAR_NT_JLT_STAT: return eval_jlt_stat(node);
+        case AAR_NT_JLE_STAT: return eval_jle_stat(node);
+        case AAR_NT_JGT_STAT: return eval_jgt_stat(node);
+        case AAR_NT_JGE_STAT: return eval_jge_stat(node);
+        case AAR_NT_INT_LIT:   return eval_int_lit(node);
+        case AAR_NT_IDENT_LIT: return eval_ident_lit(node);
+        case AAR_NT_REG_LIT:   return eval_reg_lit(node);
+        default: printf("%d\n", node->type); assert(false); break;
     }
 }
 
