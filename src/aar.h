@@ -101,6 +101,11 @@ typedef struct AARNXor {
     AARNode* right;
 } AARNXor;
 
+typedef struct AARNBinExpr {
+    AARNode* left;
+    AARNode* right;
+} AARNBinExpr;
+
 typedef struct AARNReg {
     AARRegister reg;
 } AARNReg;
