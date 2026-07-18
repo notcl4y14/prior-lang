@@ -2,6 +2,7 @@
 #define ERROR_H
 
 #include "lexer/token.h"
+
 #include <stdint.h>
 
 #define ERROR_MESSAGE_SIZE 256

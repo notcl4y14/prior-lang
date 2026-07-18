@@ -1,8 +1,8 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef enum ValueType {
     VT_NONE,

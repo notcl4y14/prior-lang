@@ -1,6 +1,7 @@
+#include "util/mem.h"
 #include "type.h"
-#include "mem.h"
 #include "value.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>

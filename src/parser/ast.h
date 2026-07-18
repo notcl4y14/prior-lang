@@ -1,8 +1,9 @@
 #ifndef AST_H
 #define AST_H
 
+#include "parser/parser.h"
+
 #include <assert.h>
-#include "parser.h"
 #include <stdint.h>
 
 /***

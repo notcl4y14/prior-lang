@@ -3,8 +3,8 @@
 
 #include "lexer/token.h"
 #include "parser/parser.h"
+#include "semantics/scope.h"
 #include "error.h"
-#include "scope.h"
 
 #define SEMANTICS_ERROR_SIZE 256
 

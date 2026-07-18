@@ -3,13 +3,13 @@
 #include "parser/ast.h"
 #include "semantics/scope.h"
 #include "semantics/semantics.h"
+#include "util/file.h"
 #include "interp.h"
 #include "value.h"
 #include "aar.h"
 #include "asmgen.h"
 #include "error.h"
 #include "type.h"
-#include "utils.h"
 
 #include <stdbool.h>
 #include <stddef.h>

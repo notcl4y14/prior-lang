@@ -3,7 +3,6 @@
 
 #include "parser/parser.h"
 #include "type.h"
-#include <value.h>
 
 typedef struct ValueFunctionParam {
     char* name;

@@ -4,6 +4,7 @@
 #include "lexer/lexer.h"
 #include "lexer/token.h"
 #include "type.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -10,15 +10,15 @@ add_library(prior_core STATIC
     src/parser/printast.c
     src/semantics/scope.c
     src/semantics/semantics.c
+    src/util/file.c
+    src/util/mem.c
     src/aar.c
     src/asmgen.c
     src/error.c
     src/eval.c
     src/interp.c
-    src/mem.c
     src/type.c
     src/value.c
-    src/utils.c
 )
 target_include_directories(prior_core PUBLIC src)
 

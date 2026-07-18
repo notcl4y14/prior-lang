@@ -3,6 +3,7 @@
 
 #include "parser/parser.h"
 #include "type.h"
+
 #include <stddef.h>
 
 typedef struct Scope Scope;

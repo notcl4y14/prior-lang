@@ -1,7 +1,8 @@
-#include "scope.h"
-#include "mem.h"
+#include "semantics/scope.h"
+#include "util/mem.h"
 #include "type.h"
 #include "value.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

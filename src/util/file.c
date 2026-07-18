@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "file.h"
 
 void read_file(const char* filename, char** output, size_t* filesize) {
     /* Open file */

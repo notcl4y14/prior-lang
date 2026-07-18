@@ -1,8 +1,9 @@
 #include "lexer/lexer.h"
 #include "lexer/token.h"
-#include "ast.h"
-#include "mem.h"
-#include "parser.h"
+#include "parser/ast.h"
+#include "parser/parser.h"
+#include "util/mem.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>

@@ -3,6 +3,7 @@
 
 #include "parser/parser.h"
 #include "semantics/scope.h"
+
 #include <value.h>
 
 typedef enum EvalBreakType {

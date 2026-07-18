@@ -1,4 +1,4 @@
-#include <error.h>
+#include "error.h"
 #include <string.h>
 
 Error create_error(const char* errmsg, TokenPosition errpos) {

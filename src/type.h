@@ -2,6 +2,7 @@
 #define TYPE_H
 
 #include "value.h"
+
 #include <stddef.h>
 
 // typedef enum Type Type;
