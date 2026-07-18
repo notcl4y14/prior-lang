@@ -140,6 +140,10 @@ typedef struct AARNode {
 typedef struct AARParser {
     Node*   ast;
     AARNode result;
+
+    uint32_t i32_reg;
+    uint32_t i64_reg;
+    uint32_t float_reg;
 } AARParser;
 
 AARParser create_aar_parser(Node* ast);
