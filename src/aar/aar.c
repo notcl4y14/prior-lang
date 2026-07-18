@@ -11,20 +11,20 @@ AARNode* aar_new_node(AARNode node) {
     return allocation;
 }
 
-AARNode aar_parse_node(const Node* node);
+AARNode aar_parse_node(AARParser* parser, const Node* node);
 
-AARNode aar_parse_bin_expr(const Node* node) {
+AARNode aar_parse_bin_expr(AARParser* parser, const Node* node) {
     const NBinExpr* data = &node->data.bin_expr;
 
-    AARNode src = aar_parse_node(data->left);
-    AARNode dst = aar_parse_node(data->right);
+    AARNode dst = aar_parse_node(parser, data->left);
+    AARNode src = aar_parse_node(parser, data->right);
 
     AARNode result = (AARNode) { 0 };
 
     switch (data->op) {
         case TT_PLUS:
             result.type = AAR_NT_ADD_STAT;
-            result.data.add = (AARNAdd) {
+            result.data.add_stat = (AARNodeAdd) {
                 .src = aar_new_node(src),
                 .dst = aar_new_node(dst),
             };
@@ -32,7 +32,7 @@ AARNode aar_parse_bin_expr(const Node* node) {
 
         case TT_MINUS:
             result.type = AAR_NT_SUB_STAT;
-            result.data.sub = (AARNSub) {
+            result.data.sub_stat = (AARNodeSub) {
                 .src = aar_new_node(src),
                 .dst = aar_new_node(dst),
             };
@@ -40,7 +40,7 @@ AARNode aar_parse_bin_expr(const Node* node) {
 
         case TT_ASTERISK:
             result.type = AAR_NT_MUL_STAT;
-            result.data.mul = (AARNMul) {
+            result.data.mul_stat = (AARNodeMul) {
                 .src = aar_new_node(src),
                 .dst = aar_new_node(dst),
             };
@@ -48,7 +48,7 @@ AARNode aar_parse_bin_expr(const Node* node) {
 
         case TT_SLASH:
             result.type = AAR_NT_DIV_STAT;
-            result.data.div = (AARNDiv) {
+            result.data.div_stat = (AARNodeDiv) {
                 .src = aar_new_node(src),
                 .dst = aar_new_node(dst),
             };
@@ -59,27 +59,72 @@ AARNode aar_parse_bin_expr(const Node* node) {
             break;
     }
 
-    return result;
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = result;
+
+    AARNode register_result = (AARNode) {
+        .type = AAR_NT_REG_LIT,
+        .data.reg_lit.reg = AARREG_EAX,
+    };
+
+    parser->i32_reg -= 1;
+
+    switch (parser->i32_reg) {
+        case 0: register_result.data.reg_lit.reg = AARREG_EAX; break;
+        case 1: register_result.data.reg_lit.reg = AARREG_EBX; break;
+        case 2: register_result.data.reg_lit.reg = AARREG_ECX; break;
+        case 3: register_result.data.reg_lit.reg = AARREG_EDX; break;
+        default: assert(false); break;
+    }
+
+    return register_result;
 }
 
-AARNode aar_parse_int_lit(const Node* node) {
+AARNode aar_parse_int_lit(AARParser* parser, const Node* node) {
     const NIntLit* data = &node->data.int_lit;
 
-    AARNode result = (AARNode) {
+    AARNode int_lit = (AARNode) {
         .type = AAR_NT_INT_LIT,
-        .data.int_ = (AARNInt) {
+        .data.int_lit = (AARNodeInt) {
             .value = data->value,
             .size  = data->size,
         },
     };
 
-    return result;
+    AARNode reg_lit = (AARNode) {
+        .type = AAR_NT_REG_LIT,
+        .data.reg_lit = (AARNodeReg) {
+            .reg = AARREG_EAX,
+        },
+    };
+
+    parser->i32_reg += 1;
+
+    switch (parser->i32_reg) {
+        case 0: reg_lit.data.reg_lit.reg = AARREG_EAX; break;
+        case 1: reg_lit.data.reg_lit.reg = AARREG_EBX; break;
+        case 2: reg_lit.data.reg_lit.reg = AARREG_ECX; break;
+        case 3: reg_lit.data.reg_lit.reg = AARREG_EDX; break;
+        default: assert(false); break;
+    }
+
+    AARNode mov_stat = (AARNode) {
+        .type = AAR_NT_MOV_STAT,
+        .data.mov_stat = (AARNodeMov) {
+            .dst = aar_new_node(reg_lit),
+            .src = aar_new_node(int_lit),
+        },
+    };
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = mov_stat;
+
+    return reg_lit;
 }
 
-AARNode aar_parse_node(const Node* node) {
+AARNode aar_parse_node(AARParser* parser, const Node* node) {
     switch (node->type) {
-        case NT_BIN_EXPR:    return aar_parse_bin_expr(node);
-        case NT_INTEGER_LIT: return aar_parse_int_lit(node);
+        case NT_BIN_EXPR:    return aar_parse_bin_expr(parser, node);
+        case NT_INTEGER_LIT: return aar_parse_int_lit(parser, node);
         default: assert(false); break;
     }
 }
@@ -89,6 +134,7 @@ AARNode aar_parse_node(const Node* node) {
 AARParser create_aar_parser(Node* ast) {
     AARParser parser = (AARParser) { 0 };
     parser.ast = ast;
+    parser.i32_reg = -1;
 
     return parser;
 }
@@ -98,11 +144,12 @@ void free_aar_parser(AARParser* p) {
 }
 
 void aar_parser_parse(AARParser* p) {
-    AARNode aar_node = (AARNode) {
-        .type = AAR_NT_PROGRAM,
-    };
+    AARNode* aar_node = &p->result;
 
-    AARNProgram* aar_data = &aar_node.data.program;
+    *aar_node = (AARNode) { 0 };
+    aar_node->type = AAR_NT_PROGRAM;
+
+    AARNodeProgram* aar_data = &aar_node->data.program;
 
     aar_data->nodes = calloc(512, sizeof(AARNode));
     aar_data->count = 0;
@@ -110,8 +157,11 @@ void aar_parser_parse(AARParser* p) {
     const NProgram* ast_data = &p->ast->data.program;
 
     for (int32_t i = 0; i < ast_data->nodes.count; ++i) {
-        aar_data->nodes[aar_data->count++] = aar_parse_node(&ast_data->nodes.nodes[i]);
-    }
+        aar_parse_node(p, &ast_data->nodes.nodes[i]);
+        // AARNode node = aar_parse_node(p, &ast_data->nodes.nodes[i]);
 
-    p->result = aar_node;
+        // if (node.type != AAR_NT_NONE) {
+        //     aar_data->nodes[aar_data->count++] = node;
+        // }
+    }
 }

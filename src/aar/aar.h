@@ -49,89 +49,89 @@ typedef enum AARNodeType {
     AAR_NT_REG_LIT,
 } AARNodeType;
 
-typedef struct AARNProgram {
+typedef struct AARNodeProgram {
     AARNode* nodes;
     size_t   count;
-} AARNProgram;
+} AARNodeProgram;
 
-typedef struct AARNLabel {
+typedef struct AARNodeLabel {
     char* name;
-} AARNLabel;
+} AARNodeLabel;
 
-typedef struct AARNMov {
+typedef struct AARNodeMov {
     AARNode* src;
     AARNode* dst;
-} AARNMov;
+} AARNodeMov;
 
-typedef struct AARNAdd {
+typedef struct AARNodeAdd {
     AARNode* src;
     AARNode* dst;
-} AARNAdd;
+} AARNodeAdd;
 
-typedef struct AARNSub {
+typedef struct AARNodeSub {
     AARNode* src;
     AARNode* dst;
-} AARNSub;
+} AARNodeSub;
 
-typedef struct AARNMul {
+typedef struct AARNodeMul {
     AARNode* src;
     AARNode* dst;
-} AARNMul;
+} AARNodeMul;
 
-typedef struct AARNDiv {
+typedef struct AARNodeDiv {
     AARNode* src;
     AARNode* dst;
-} AARNDiv;
+} AARNodeDiv;
 
-typedef struct AARNAnd {
+typedef struct AARNodeAnd {
     AARNode* left;
     AARNode* right;
-} AARNAnd;
+} AARNodeAnd;
 
-typedef struct AARNOr {
+typedef struct AARNodeOr {
     AARNode* left;
     AARNode* right;
-} AARNOr;
+} AARNodeOr;
 
-typedef struct AARNNot {
+typedef struct AARNodeNot {
     AARNode* reg;
-} AARNNot;
+} AARNodeNot;
 
-typedef struct AARNXor {
+typedef struct AARNodeXor {
     AARNode* left;
     AARNode* right;
-} AARNXor;
+} AARNodeXor;
 
-typedef struct AARNBinExpr {
+typedef struct AARNodeBinExpr {
     AARNode* left;
     AARNode* right;
-} AARNBinExpr;
+} AARNodeBinExpr;
 
-typedef struct AARNReg {
+typedef struct AARNodeReg {
     AARRegister reg;
-} AARNReg;
+} AARNodeReg;
 
-typedef struct AARNInt {
+typedef struct AARNodeInt {
     char*  value;
     size_t size;
-} AARNInt;
+} AARNodeInt;
 
 typedef struct AARNode {
     AARNodeType type;
     union {
-        AARNProgram program;
-        AARNLabel label;
-        AARNMov   mov;
-        AARNAdd   add;
-        AARNSub   sub;
-        AARNMul   mul;
-        AARNDiv   div;
-        AARNAnd   and_;
-        AARNOr    or_;
-        AARNNot   not_;
-        AARNXor   xor_;
-        AARNReg   reg;
-        AARNInt   int_;
+        AARNodeProgram program;
+        AARNodeLabel   label_stat;
+        AARNodeMov     mov_stat;
+        AARNodeAdd     add_stat;
+        AARNodeSub     sub_stat;
+        AARNodeMul     mul_stat;
+        AARNodeDiv     div_stat;
+        AARNodeAnd     and_stat;
+        AARNodeOr      or_stat;
+        AARNodeNot     not_stat;
+        AARNodeXor     xor_stat;
+        AARNodeReg     reg_lit;
+        AARNodeInt     int_lit;
     } data;
 } AARNode;
 
@@ -141,9 +141,9 @@ typedef struct AARParser {
     Node*   ast;
     AARNode result;
 
-    uint32_t i32_reg;
-    uint32_t i64_reg;
-    uint32_t float_reg;
+    int32_t i32_reg;
+    int32_t i64_reg;
+    int32_t float_reg;
 } AARParser;
 
 AARParser create_aar_parser(Node* ast);

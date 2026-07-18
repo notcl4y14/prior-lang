@@ -9,14 +9,14 @@
 char* eval(AARNode* node);
 
 char* eval_mov_stat(AARNode* node) {
-    AARNMov* data = &node->data.mov;
+    AARNodeMov* data = &node->data.mov_stat;
 
     char* strbuf = malloc(256 * sizeof(char));
 
     char* src = eval(data->src);
     char* dst = eval(data->dst);
 
-    sprintf(strbuf, "mov %s, %s", src, dst);
+    sprintf(strbuf, "mov %s, %s", dst, src);
 
     free(dst);
     free(src);
@@ -25,14 +25,30 @@ char* eval_mov_stat(AARNode* node) {
 }
 
 char* eval_add_stat(AARNode* node) {
-    AARNAdd* data = &node->data.add;
+    AARNodeAdd* data = &node->data.add_stat;
 
     char* strbuf = malloc(256 * sizeof(char));
 
     char* src = eval(data->src);
     char* dst = eval(data->dst);
 
-    sprintf(strbuf, "add %s, %s", src, dst);
+    sprintf(strbuf, "add %s, %s", dst, src);
+
+    free(dst);
+    free(src);
+
+    return strbuf;
+}
+
+char* eval_mul_stat(AARNode* node) {
+    AARNodeAdd* data = &node->data.add_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    char* src = eval(data->src);
+    char* dst = eval(data->dst);
+
+    sprintf(strbuf, "mul %s, %s", dst, src);
 
     free(dst);
     free(src);
@@ -41,7 +57,7 @@ char* eval_add_stat(AARNode* node) {
 }
 
 char* eval_reg_lit(AARNode* node) {
-    AARNReg* data = &node->data.reg;
+    AARNodeReg* data = &node->data.reg_lit;
 
     char* strbuf = malloc(8 * sizeof(char));
 
@@ -63,7 +79,7 @@ char* eval_reg_lit(AARNode* node) {
 }
 
 char* eval_int_lit(AARNode* node) {
-    AARNInt* data = &node->data.int_;
+    AARNodeInt* data = &node->data.int_lit;
 
     char* strbuf = calloc(data->size + 1, sizeof(char));
     *strbuf = *data->value;
@@ -75,6 +91,7 @@ char* eval(AARNode* node) {
     switch (node->type) {
         case AAR_NT_MOV_STAT: return eval_mov_stat(node);
         case AAR_NT_ADD_STAT: return eval_add_stat(node);
+        case AAR_NT_MUL_STAT: return eval_mul_stat(node);
         case AAR_NT_REG_LIT:  return eval_reg_lit(node);
         case AAR_NT_INT_LIT:  return eval_int_lit(node);
         default: assert(false); break;
@@ -84,8 +101,8 @@ char* eval(AARNode* node) {
 void asm_gen_nasm(AsmGen* asm_gen) {
     asm_gen_push(asm_gen, "global _main\n_main:\n");
 
-    const AARNode*     aar_node = asm_gen->aar;
-    const AARNProgram* aar_data = &aar_node->data.program;
+    const AARNode*        aar_node = asm_gen->aar;
+    const AARNodeProgram* aar_data = &aar_node->data.program;
 
     for (int32_t i = 0; i < aar_data->count; ++i) {
         AARNode* node = &aar_data->nodes[i];
@@ -93,6 +110,7 @@ void asm_gen_nasm(AsmGen* asm_gen) {
 
         asm_gen_push(asm_gen, "  "); // indentation
         asm_gen_push(asm_gen, strbuf); // instruction
+        asm_gen_push(asm_gen, "\n"); // newline
 
         free(strbuf);
     }
