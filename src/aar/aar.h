@@ -144,6 +144,7 @@ typedef struct AARParser {
     int32_t i32_reg;
     int32_t i64_reg;
     int32_t float_reg;
+    int32_t label_count;
 } AARParser;
 
 AARParser create_aar_parser(Node* ast);

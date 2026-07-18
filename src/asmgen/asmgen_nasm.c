@@ -9,6 +9,16 @@
 
 char* eval(AARNode* node);
 
+char* eval_label_stat(AARNode* node) {
+    AARNodeLabel* data = &node->data.label_stat;
+
+    char* strbuf = malloc(256 * sizeof(char));
+
+    sprintf(strbuf, "%s:", data->name);
+
+    return strbuf;
+}
+
 char* eval_mov_stat(AARNode* node) {
     AARNodeMov* data = &node->data.mov_stat;
 
@@ -125,6 +135,7 @@ char* eval_int_lit(AARNode* node) {
 
 char* eval(AARNode* node) {
     switch (node->type) {
+        case AAR_NT_LABEL_STAT: return eval_label_stat(node);
         case AAR_NT_MOV_STAT: return eval_mov_stat(node);
         case AAR_NT_ADD_STAT: return eval_add_stat(node);
         case AAR_NT_SUB_STAT: return eval_sub_stat(node);

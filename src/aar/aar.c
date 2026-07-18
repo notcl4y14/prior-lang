@@ -3,6 +3,7 @@
 #include "parser/parser.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 AARNode* aar_new_node(AARNode node) {
@@ -12,6 +13,30 @@ AARNode* aar_new_node(AARNode node) {
 }
 
 AARNode aar_parse_node(AARParser* parser, const Node* node);
+
+AARNode aar_parse_block(AARParser* parser, const Node* node) {
+    const NBlock* data = &node->data.block;
+
+    // TODO: Add stack frame
+
+    char* label_name = calloc(32, sizeof(char));
+    sprintf(label_name, "L%d", parser->label_count++);
+
+    AARNode label_stat = (AARNode) {
+        .type = AAR_NT_LABEL_STAT,
+        .data.label_stat = (AARNodeLabel) {
+            .name = label_name,
+        }
+    };
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = label_stat;
+
+    for (int32_t i = 0; i < data->nodes.count; ++i) {
+        aar_parse_node(parser, &data->nodes.nodes[i]);
+    }
+
+    return (AARNode) { 0 };
+}
 
 AARNode aar_parse_bin_expr(AARParser* parser, const Node* node) {
     const NBinExpr* data = &node->data.bin_expr;
@@ -123,6 +148,7 @@ AARNode aar_parse_int_lit(AARParser* parser, const Node* node) {
 
 AARNode aar_parse_node(AARParser* parser, const Node* node) {
     switch (node->type) {
+        case NT_BLOCK:       return aar_parse_block(parser, node);
         case NT_BIN_EXPR:    return aar_parse_bin_expr(parser, node);
         case NT_INTEGER_LIT: return aar_parse_int_lit(parser, node);
         default: assert(false); break;
