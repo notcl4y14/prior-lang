@@ -23,6 +23,7 @@ AARNode aar_parse_if_stat(AARParser* parser, const Node* node) {
     }
 
     // TODO: Handle nested labels
+    // TODO: Handle `else if`/`else` statements
 
     const NBinExpr* condition_data = &data->condition->data.bin_expr;
 
@@ -54,8 +55,6 @@ AARNode aar_parse_if_stat(AARParser* parser, const Node* node) {
     // We checked the registers already
     // parser->i32_reg -= 1;
 
-    // printf("%d\n", jump_stat.type);
-
     aar_parse_node(parser, data->condition);
     parser->result.data.program.nodes[parser->result.data.program.count++] = jump_stat;
 
@@ -67,9 +66,85 @@ AARNode aar_parse_if_stat(AARParser* parser, const Node* node) {
     } else {
         aar_parse_node(parser, data->body);
     }
-    // printf("%d\n", label_stat.type);
 
     parser->result.data.program.nodes[parser->result.data.program.count++] = label_stat;
+
+    return (AARNode) { 0 };
+}
+
+AARNode aar_parse_while_stat(AARParser* parser, const Node* node) {
+    const NWhileStat* data = &node->data.while_stat;
+
+    // TODO: Handle non-binary expressions in while statements
+    if (data->condition->type != NT_BIN_EXPR) {
+        assert(false && "Only binary expressions for now.");
+    }
+
+    const NBinExpr* condition_data = &data->condition->data.bin_expr;
+
+    char* start_jump_label = calloc(8, sizeof(char));
+    sprintf(start_jump_label, "L%d", ++parser->label_count);
+
+    AARNode start_label_stat = (AARNode) { 0 };
+    start_label_stat.type = AAR_NT_LABEL_STAT;
+    start_label_stat.data.label_stat.name = start_jump_label;
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = start_label_stat;
+
+    //
+
+    char* end_jump_label = calloc(8, sizeof(char));
+    sprintf(end_jump_label, "L%d", ++parser->label_count);
+
+    AARNode end_label_stat = (AARNode) { 0 };
+    end_label_stat.type = AAR_NT_LABEL_STAT;
+    end_label_stat.data.label_stat.name = end_jump_label;
+
+    AARNode end_jump_stat = (AARNode) { 0 };
+    end_jump_stat.data.jmp_stat.target = aar_new_node((AARNode) {
+        .type = AAR_NT_IDENT_LIT,
+        .data.ident_lit = (AARNodeIdent) {
+            .ident = end_jump_label,
+        },
+    });
+
+    switch (condition_data->op) {
+        case TT_EQUALS:         end_jump_stat.type = AAR_NT_JNE_STAT; break;
+        case TT_NOT_EQUALS:     end_jump_stat.type = AAR_NT_JEQ_STAT; break;
+        case TT_LESS:           end_jump_stat.type = AAR_NT_JGE_STAT; break;
+        case TT_LESS_EQUALS:    end_jump_stat.type = AAR_NT_JGT_STAT; break;
+        case TT_GREATER:        end_jump_stat.type = AAR_NT_JLE_STAT; break;
+        case TT_GREATER_EQUALS: end_jump_stat.type = AAR_NT_JLT_STAT; break;
+        default: assert(false); break;
+    }
+
+    aar_parse_node(parser, data->condition);
+    parser->result.data.program.nodes[parser->result.data.program.count++] = end_jump_stat;
+
+    // We don't need any second labels, so we parse the block ourselves
+    if (data->body->type == NT_BLOCK) {
+        for (int32_t i = 0; i < data->body->data.block.nodes.count; ++i) {
+            aar_parse_node(parser, &data->body->data.block.nodes.nodes[i]);
+        }
+    } else {
+        aar_parse_node(parser, data->body);
+    }
+
+    // TODO: Optimize, if possible and needed
+    AARNode loop_jump_stat = (AARNode) {
+        .type = AAR_NT_JMP_STAT,
+        .data.jmp_stat = (AARNodeJmp) {
+            .target = aar_new_node((AARNode) {
+                .type = AAR_NT_IDENT_LIT,
+                .data.ident_lit = (AARNodeIdent) {
+                    .ident = start_jump_label,
+                },
+            }),
+        },
+    };
+    parser->result.data.program.nodes[parser->result.data.program.count++] = loop_jump_stat;
+
+    parser->result.data.program.nodes[parser->result.data.program.count++] = end_label_stat;
 
     return (AARNode) { 0 };
 }
@@ -222,6 +297,7 @@ AARNode aar_parse_int_lit(AARParser* parser, const Node* node) {
 AARNode aar_parse_node(AARParser* parser, const Node* node) {
     switch (node->type) {
         case NT_IF_STAT:     return aar_parse_if_stat(parser, node);
+        case NT_WHILE_STAT:  return aar_parse_while_stat(parser, node);
         case NT_BLOCK:       return aar_parse_block(parser, node);
         case NT_BIN_EXPR:    return aar_parse_bin_expr(parser, node);
         case NT_INTEGER_LIT: return aar_parse_int_lit(parser, node);

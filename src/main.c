@@ -260,7 +260,7 @@ void interpret(int32_t argc, char* argv[]) {
     def_table_assign_def( &scope.def_table, "u64",   create_type_def("u64",  TYPE_VALUE_UINT64)  );
     def_table_assign_def( &scope.def_table, "f32",   create_type_def("f32",  TYPE_VALUE_FLOAT32) );
     def_table_assign_def( &scope.def_table, "f64",   create_type_def("f64",  TYPE_VALUE_FLOAT64) );
-    def_table_assign_def( &scope.def_table, "bool", create_alias_def("bool", "u8")               );
+    def_table_assign_def( &scope.def_table, "bool",  create_alias_def("bool", "u8")               );
 
     // Preloading
     scope_declare_var(&scope, "null", create_type_def("null", TYPE_VALUE_UINT8).data.data_type);
@@ -310,7 +310,7 @@ void interpret(int32_t argc, char* argv[]) {
 }
 
 int32_t main(int32_t argc, char* argv[]) {
-    /* subtracting the count by 1 because the first arg is executable */
+    /* subtracting the count by 1 because the first arg is the executable */
     int32_t argument_count = argc - 1;
 
     if (argument_count == 0) {
