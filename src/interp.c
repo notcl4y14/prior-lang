@@ -1,6 +1,6 @@
 #include "lexer/token.h"
 #include "parser/parser.h"
-#include "scope.h"
+#include "semantics/scope.h"
 #include "type.h"
 #include "value_types.h"
 #include "interp.h"

@@ -2,7 +2,7 @@
 #define INTERPRETER_H
 
 #include "parser/parser.h"
-#include "scope.h"
+#include "semantics/scope.h"
 #include <value.h>
 
 typedef enum EvalBreakType {
