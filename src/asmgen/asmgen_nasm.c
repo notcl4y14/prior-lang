@@ -134,7 +134,7 @@ char* eval_jeq_stat(AARNode* node) {
     char* strbuf = malloc(256 * sizeof(char));
 
     char* target = eval(data->target);
-    sprintf(strbuf, "jeq %s", target);
+    sprintf(strbuf, "je %s", target);
 
     free(target);
 
@@ -160,7 +160,7 @@ char* eval_jlt_stat(AARNode* node) {
     char* strbuf = malloc(256 * sizeof(char));
 
     char* target = eval(data->target);
-    sprintf(strbuf, "jlt %s", target);
+    sprintf(strbuf, "jl %s", target);
 
     free(target);
 
@@ -186,7 +186,7 @@ char* eval_jgt_stat(AARNode* node) {
     char* strbuf = malloc(256 * sizeof(char));
 
     char* target = eval(data->target);
-    sprintf(strbuf, "jgt %s", target);
+    sprintf(strbuf, "jg %s", target);
 
     free(target);
 
