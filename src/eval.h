@@ -7,7 +7,7 @@
  * That's it. It's used for semantics comptime calculation.
  */
 
-#include "parser.h"
+#include "parser/parser.h"
 #include "scope.h"
 #include "value.h"
 

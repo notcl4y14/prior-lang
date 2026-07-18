@@ -1,8 +1,8 @@
 #ifndef SCOPE_H
 #define SCOPE_H
 
+#include "parser/parser.h"
 #include "type.h"
-#include <parser.h>
 #include <stddef.h>
 
 typedef struct Scope Scope;

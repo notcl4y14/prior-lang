@@ -1,14 +1,13 @@
 #include "lexer/token.h"
+#include "parser/parser.h"
 #include "scope.h"
 #include "type.h"
 #include "value_types.h"
-#include <interp.h>
-#include <mem.h>
-#include <parser.h>
-#include <stddef.h>
-#include <value.h>
+#include "interp.h"
+#include "value.h"
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,5 +1,5 @@
-#include "../src/lexer/lexer.h"
-#include "../src/parser.h"
+#include "lexer/lexer.h"
+#include "parser/parser.h"
 
 #include <assert.h>
 #include <string.h>

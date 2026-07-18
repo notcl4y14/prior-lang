@@ -1,9 +1,9 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "parser.h"
-#include <value.h>
+#include "parser/parser.h"
 #include "scope.h"
+#include <value.h>
 
 typedef enum EvalBreakType {
     EBT_NONE,

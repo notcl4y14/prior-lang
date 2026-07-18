@@ -1,12 +1,12 @@
 #include "lexer/token.h"
+#include "parser/parser.h"
 #include "error.h"
 #include "eval.h"
 #include "scope.h"
+#include "semantics.h"
 #include "type.h"
 #include "value.h"
-#include "parser.h"
 #include <assert.h>
-#include <semantics.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

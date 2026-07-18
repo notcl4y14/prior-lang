@@ -1,7 +1,7 @@
 #ifndef VALUE_TYPES_H
 #define VALUE_TYPES_H
 
-#include "parser.h"
+#include "parser/parser.h"
 #include "type.h"
 #include <value.h>
 

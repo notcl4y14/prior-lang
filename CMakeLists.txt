@@ -5,15 +5,15 @@ project(priorlang VERSION 1.0 LANGUAGES C)
 add_library(prior_core STATIC
     src/asmgen/asmgen_nasm.c
     src/lexer/lexer.c
+    src/parser/ast.c
+    src/parser/parser.c
+    src/parser/printast.c
     src/aar.c
     src/asmgen.c
-    src/ast.c
     src/error.c
     src/eval.c
     src/interp.c
     src/mem.c
-    src/parser.c
-    src/printast.c
     src/scope.c
     src/semantics.c
     src/type.c

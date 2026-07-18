@@ -1,12 +1,12 @@
 #include "lexer/lexer.h"
-#include <interp.h>
-#include <value.h>
-#include <ast.h>
+#include "parser/parser.h"
+#include "parser/ast.h"
+#include "interp.h"
+#include "value.h"
 #include "aar.h"
 #include "asmgen.h"
-#include "parser.h"
 #include "error.h"
-#include <semantics.h>
+#include "semantics.h"
 #include "scope.h"
 #include "type.h"
 #include "utils.h"

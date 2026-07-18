@@ -1,7 +1,7 @@
 #include "lexer/lexer.h"
-#include <ast.h>
+#include "parser/ast.h"
+#include "parser/parser.h"
 #include <assert.h>
-#include <parser.h>
 #include <stdalign.h>
 #include <stdbool.h>
 #include <stdlib.h>
