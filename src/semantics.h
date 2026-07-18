@@ -1,10 +1,10 @@
 #ifndef SEMANTICS_H
 #define SEMANTICS_H
 
+#include "lexer/token.h"
 #include "error.h"
 #include "parser.h"
 #include "scope.h"
-#include "token.h"
 
 #define SEMANTICS_ERROR_SIZE 256
 

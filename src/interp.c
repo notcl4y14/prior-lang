@@ -1,3 +1,4 @@
+#include "lexer/token.h"
 #include "scope.h"
 #include "type.h"
 #include "value_types.h"
@@ -5,7 +6,6 @@
 #include <mem.h>
 #include <parser.h>
 #include <stddef.h>
-#include <token.h>
 #include <value.h>
 
 #include <assert.h>

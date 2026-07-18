@@ -1,7 +1,7 @@
+#include "lexer/token.h"
 #include "error.h"
 #include "eval.h"
 #include "scope.h"
-#include "token.h"
 #include "type.h"
 #include "value.h"
 #include "parser.h"

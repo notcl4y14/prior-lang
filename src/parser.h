@@ -1,9 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "token.h"
+#include "lexer/lexer.h"
+#include "lexer/token.h"
 #include "type.h"
-#include <lexer.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

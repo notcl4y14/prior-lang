@@ -1,6 +1,6 @@
+#include "lexer/lexer.h"
 #include <ast.h>
 #include <assert.h>
-#include <lexer.h>
 #include <parser.h>
 #include <stdalign.h>
 #include <stdbool.h>

@@ -1,8 +1,8 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include "lexer/token.h"
 #include <stdint.h>
-#include <token.h>
 
 #define ERROR_MESSAGE_SIZE 256
 #define ERROR_LIST_MAX 128

@@ -1,4 +1,4 @@
-#include "../src/lexer.h"
+#include "../src/lexer/lexer.h"
 #include "../src/parser.h"
 
 #include <assert.h>

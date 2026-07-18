@@ -1,3 +1,4 @@
+#include "lexer/lexer.h"
 #include <interp.h>
 #include <value.h>
 #include <ast.h>
@@ -5,7 +6,6 @@
 #include "asmgen.h"
 #include "parser.h"
 #include "error.h"
-#include <lexer.h>
 #include <semantics.h>
 #include "scope.h"
 #include "type.h"

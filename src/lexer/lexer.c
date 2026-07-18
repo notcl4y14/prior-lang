@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <lexer.h>
+#include "lexer.h"
 
 const char* TokenTypeNames[] = {
     [TT_EOF] = "EOF",

@@ -1,8 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <token.h>
-#include <error.h>
+#include "token.h"
+#include "../error.h"
 #include <stddef.h>
 #include <stdint.h>
 
