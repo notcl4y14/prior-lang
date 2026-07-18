@@ -9,57 +9,57 @@
  */
 
 int main() {
-    TypeTable type_table = create_type_table();
+    DefTable def_table = create_def_table();
 
     /* Assigning core types */
-    type_table_assign_type( &type_table, "i8",  create_value_typedef(VT_INT8)   );
-    type_table_assign_type( &type_table, "i16", create_value_typedef(VT_INT16)  );
-    type_table_assign_type( &type_table, "i32", create_value_typedef(VT_INT32)  );
-    type_table_assign_type( &type_table, "i64", create_value_typedef(VT_INT64)  );
-    type_table_assign_type( &type_table, "u8",  create_value_typedef(VT_UINT8)  );
-    type_table_assign_type( &type_table, "u16", create_value_typedef(VT_UINT16) );
-    type_table_assign_type( &type_table, "u32", create_value_typedef(VT_UINT32) );
-    type_table_assign_type( &type_table, "u64", create_value_typedef(VT_UINT64) );
+    def_table_assign_def( &def_table, "i8",  create_type_def("i8",  TYPE_VALUE_INT8)   );
+    def_table_assign_def( &def_table, "i16", create_type_def("i16", TYPE_VALUE_INT16)  );
+    def_table_assign_def( &def_table, "i32", create_type_def("i32", TYPE_VALUE_INT32)  );
+    def_table_assign_def( &def_table, "i64", create_type_def("i64", TYPE_VALUE_INT64)  );
+    def_table_assign_def( &def_table, "u8",  create_type_def("u8",  TYPE_VALUE_UINT8)  );
+    def_table_assign_def( &def_table, "u16", create_type_def("u16", TYPE_VALUE_UINT16) );
+    def_table_assign_def( &def_table, "u32", create_type_def("u32", TYPE_VALUE_UINT32) );
+    def_table_assign_def( &def_table, "u64", create_type_def("u64", TYPE_VALUE_UINT64) );
 
     /* Assigning alias types */
-    type_table_assign_type( &type_table, "uint32_t", create_alias_typedef("u32") );
-    type_table_assign_type( &type_table, "float",    create_alias_typedef("f32") );
+    def_table_assign_def( &def_table, "uint32_t", create_alias_def("uint32_t", "u32") );
+    def_table_assign_def( &def_table, "float",    create_alias_def("float",    "f32") );
 
     /* Assigning struct types */
-    TypeStructData struct_data = create_type_struct_data();
+    StructDefData struct_data = create_struct_def_data();
 
     {
-        struct_data.fields_names[0] = "x";
+        struct_data.fields_idents[0] = "x";
         struct_data.fields_types[0] = "float";
-        struct_data.fields_names[1] = "y";
+        struct_data.fields_idents[1] = "y";
         struct_data.fields_types[1] = "float";
         struct_data.count = 2;
 
-        type_table_assign_type( &type_table, "Vector2f", create_struct_typedef(struct_data) );
+        def_table_assign_def( &def_table, "Vector2f", create_struct_def("Vector2f", struct_data) );
     }
 
-    for (int32_t i = 0; i < type_table.count; ++i) {
-        const char* ident = type_table.types_idents[i];
-        const Type* tdef = &type_table.types_values[i];
+    for (int32_t i = 0; i < def_table.count; ++i) {
+        const char* ident     = def_table.defs_idents[i];
+        const Definition* def = &def_table.defs_data[i];
 
         printf("%s", ident);
 
-        switch (tdef->type) {
-            case TYPE_TYPE_ALIAS:  printf("\t: alias "); break;
-            case TYPE_TYPE_VALUE:  printf("\t: value "); break;
-            case TYPE_TYPE_STRUCT: printf("\t: struct"); break;
+        switch (def->type) {
+            case DEF_TYPE_ALIASTYPE:  printf("\t: alias "); break;
+            case DEF_TYPE_VALUETYPE:  printf("\t: value "); break;
+            case DEF_TYPE_STRUCT:     printf("\t: struct"); break;
             default: assert(false);
         }
 
-        switch (tdef->type) {
-            case TYPE_TYPE_ALIAS:  printf(" = %s", tdef->data.data_alias);                 break;
-            case TYPE_TYPE_VALUE:  printf(" = %s", ValueTypeNames[tdef->data.data_value]); break;
-            case TYPE_TYPE_STRUCT:
+        switch (def->type) {
+            case DEF_TYPE_ALIASTYPE:  printf(" = %s", def->data.data_alias);                break;
+            case DEF_TYPE_VALUETYPE:  printf(" = %s", ValueTypeNames[def->data.data_type]); break;
+            case DEF_TYPE_STRUCT:
                 printf(" = {");
 
-                for (int32_t j = 0; j < tdef->data.data_struct.count; ++j) {
-                    const char* name = tdef->data.data_struct.fields_names[j];
-                    const char* type = tdef->data.data_struct.fields_types[j];
+                for (int32_t j = 0; j < def->data.data_struct.count; ++j) {
+                    const char* name = def->data.data_struct.fields_idents[j];
+                    const char* type = def->data.data_struct.fields_types[j];
                     printf(" %s: %s,", name, type);
                 }
 
@@ -72,5 +72,5 @@ int main() {
         printf("\n");
     }
 
-    free_type_table(&type_table);
+    free_def_table(&def_table);
 }
