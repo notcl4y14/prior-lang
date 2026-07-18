@@ -1,5 +1,5 @@
 #include "lexer/lexer.h"
-#include "utils.h"
+#include "util/file.h"
 #include <string.h>
 #include <assert.h>
 
