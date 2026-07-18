@@ -1,5 +1,5 @@
-#include "aar.h"
-#include "asmgen.h"
+#include "aar/aar.h"
+#include "asmgen/asmgen.h"
 
 #include <assert.h>
 #include <stdlib.h>

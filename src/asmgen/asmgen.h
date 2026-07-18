@@ -7,7 +7,7 @@
  * Has different versions.
  */
 
-#include "aar.h"
+#include "aar/aar.h"
 
 typedef struct AsmGen {
     AARNode* aar;

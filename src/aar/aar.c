@@ -1,6 +1,6 @@
+#include "aar/aar.h"
 #include "lexer/token.h"
 #include "parser/parser.h"
-#include "aar.h"
 
 #include <assert.h>
 #include <stdlib.h>

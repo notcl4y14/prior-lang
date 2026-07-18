@@ -1,4 +1,4 @@
-#include "asmgen.h"
+#include "asmgen/asmgen.h"
 
 #include <stdlib.h>
 #include <string.h>

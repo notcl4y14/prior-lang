@@ -1,3 +1,5 @@
+#include "aar/aar.h"
+#include "asmgen/asmgen.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "parser/ast.h"
@@ -6,8 +8,6 @@
 #include "util/file.h"
 #include "interp.h"
 #include "value.h"
-#include "aar.h"
-#include "asmgen.h"
 #include "error.h"
 #include "type.h"
 

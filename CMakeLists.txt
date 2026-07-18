@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 project(priorlang VERSION 1.0 LANGUAGES C)
 
 add_library(prior_core STATIC
+    src/aar/aar.c
+    src/asmgen/asmgen.c
     src/asmgen/asmgen_nasm.c
     src/lexer/lexer.c
     src/parser/ast.c
@@ -12,8 +14,6 @@ add_library(prior_core STATIC
     src/semantics/semantics.c
     src/util/file.c
     src/util/mem.c
-    src/aar.c
-    src/asmgen.c
     src/error.c
     src/eval.c
     src/interp.c
