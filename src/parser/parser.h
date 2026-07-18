@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <value.h>
 
-#define INITIAL_NODE_POOL_SIZE (1024 * 16) // 16 KB
 #define PARSER_ERROR_SIZE 256
 
 typedef enum NodeType {

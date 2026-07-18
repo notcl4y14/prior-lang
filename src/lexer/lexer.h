@@ -7,8 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LEXER_ERROR_SIZE 256
-
 extern const char* TokenTypeNames[];
 
 typedef struct TokenArray {
