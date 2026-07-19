@@ -32,13 +32,10 @@
   - [x] Let the semantics system declare global variables and declarations instead of the interpreter
   - [x] Check for function call expressions
   - [ ] Implement auto-cast
+- [x] Cleaning up
+  - [x] Categorize modules into directories
 - [ ] Compilation
   - [ ] LLVM IR
-- [ ] Optimizer
-  - [ ] Comptime binary expression solver
-  - [ ] Comptime unary expression solver
-- [ ] Cleaning up
-  - [ ] Categorize modules into directories
 - [ ] Miscellaneous
   - [ ] Free strings
   - [ ] Free some unfreed elements when the compiler encounters an error
