@@ -33,9 +33,7 @@
   - [x] Check for function call expressions
   - [ ] Implement auto-cast
 - [ ] Compilation
-  - [ ] IR
-  - [ ] Print IR
-  - [ ] Assembly Generation
+  - [ ] LLVM IR
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
