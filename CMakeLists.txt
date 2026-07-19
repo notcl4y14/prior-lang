@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(priorlang VERSION 1.0 LANGUAGES C)
 
+# LLVM
+find_package(LLVM REQUIRED CONFIG)
+
 add_library(prior_core STATIC
     src/aar/aar.c
     src/asmgen/asmgen.c
@@ -26,6 +29,7 @@ target_include_directories(prior_core PUBLIC src)
 # commandline executable
 add_executable(prior src/main.c)
 target_link_libraries(prior PRIVATE prior_core)
+target_link_libraries(prior PRIVATE LLVM)
 
 enable_testing()
 
