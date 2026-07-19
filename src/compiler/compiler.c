@@ -1,4 +1,5 @@
 #include "compiler/compiler.h"
+#include "ir/ir.h"
 #include "lexer/lexer.h"
 #include "parser/ast.h"
 #include "parser/parser.h"
@@ -75,6 +76,9 @@ void compile(const CompileOptions* options) {
 
     // Type checking and generating a SymTable
     Scope scope = create_scope(NULL);
+
+    def_table_assign_def( &scope.def_table, "i32", create_type_def("i32", TYPE_VALUE_INT32) );
+
     Semantics semantics = create_semantics(&scope);
     process_semantics(&semantics, &ast);
 
@@ -85,7 +89,17 @@ void compile(const CompileOptions* options) {
 
 
 
+    // Generating IR
+    IRBuilder ir_builder = create_ir_builder(&ast, &scope.def_table);
+    ir_builder_build(&ir_builder);
+    ir_builder_save_into_file(&ir_builder, "output.bc");
+
+
+
     // Freeing
+    free_ir:
+    free_ir_builder(&ir_builder);
+
     free_semantics:
     free_scope(&scope);
 
