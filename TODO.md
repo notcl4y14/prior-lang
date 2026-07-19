@@ -32,20 +32,10 @@
   - [x] Let the semantics system declare global variables and declarations instead of the interpreter
   - [x] Check for function call expressions
   - [ ] Implement auto-cast
-- [ ] Interpterer
-  - [x] Isolate function call scope to the global state
-    - The function you're calling should not see your local variables
-  - [ ] Implement error system
-  - [ ] Handle errors
-    - [ ] Division by 0
-    - [ ] Variable definition
-    - [ ] Function Arguments and Parameters
 - [ ] Compilation
-  - [x] Implement Abstract Assembly Representation
-  - [ ] Implement AAR Parser
-  - [ ] Print AAR
+  - [ ] IR
+  - [ ] Print IR
   - [ ] Assembly Generation
-    - [ ] NASM
 - [ ] Optimizer
   - [ ] Comptime binary expression solver
   - [ ] Comptime unary expression solver
@@ -53,10 +43,9 @@
   - [ ] Categorize modules into directories
 - [ ] Miscellaneous
   - [ ] Free strings
-  - [ ] Free AAR Parser nodes
-  - [ ] Free some unfreed elements when error happens
+  - [ ] Free some unfreed elements when the compiler encounters an error
 
-When the language has all or most of the TODO-s done, the development shifts onto the next stage with TODO below:
+When the language has all or most of the TODO-s done, the development proceeds to the next stage with TODO below:
 
 - [ ] Lexer
   - [ ] Implement string backslashes, interpolation
@@ -70,7 +59,7 @@ When the language has all or most of the TODO-s done, the development shifts ont
   - [ ] Implement function modifiers
     - [ ] extern
   - [ ] Implement FFI
-- [ ] Abstract Assembly Representation
+- [ ] Immediate Representation
   - [ ] Handle imports
   - [ ] Handle static/dynamic libraries
   - [ ] Handle FFI
