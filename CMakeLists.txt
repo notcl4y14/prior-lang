@@ -6,6 +6,7 @@ add_library(prior_core STATIC
     src/aar/aar.c
     src/asmgen/asmgen.c
     src/asmgen/asmgen_nasm.c
+    src/compiler/compiler.c
     src/lexer/lexer.c
     src/parser/ast.c
     src/parser/parser.c

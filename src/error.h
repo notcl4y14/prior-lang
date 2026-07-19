@@ -22,5 +22,6 @@ typedef struct ErrorList {
 
 ErrorList create_error_list();
 void add_to_error_list(ErrorList* errlist, Error error);
+void print_error_list(ErrorList* errlist);
 
 #endif

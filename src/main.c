@@ -1,5 +1,4 @@
-#include "aar/aar.h"
-#include "asmgen/asmgen.h"
+#include "compiler/compiler.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "parser/ast.h"
@@ -23,16 +22,6 @@ bool show_tokens = false;
 bool show_ast = false;
 bool show_semantics = false;
 bool show_asm = false;
-
-void print_tokens(TokenArray* tokens) {
-    printf("\n==== TOKENS ====\n");
-    print_token_array(tokens);
-}
-
-void print_ast(Node* ast) {
-    printf("\n==== AST ====\n");
-    print_node_tree(ast, 0);
-}
 
 bool args_contains(int32_t argc, char* argv[], const char* arg) {
     for (int32_t i = 0; i < argc; ++i) {
@@ -59,124 +48,6 @@ void usage() {
     printf("        --p-tokens - Print the tokens of the code\n");
     printf("        --p-ast    - Print the AST of the code\n");
     printf("        --p-semantics - Print the Semantics result of the AST\n");
-}
-
-void compile(int32_t argc, char* argv[]) {
-    show_stages = args_contains(argc, argv, "--p-stages");
-    show_tokens = args_contains(argc, argv, "--p-tokens");
-    show_ast = args_contains(argc, argv, "--p-ast");
-    show_asm = args_contains(argc, argv, "--p-asm");
-
-    /* Lexer Stage */
-    char* filename = argv[2];
-    char* lexer_code = NULL;
-    size_t file_size = 0;
-
-    read_file(filename, &lexer_code, &file_size);
-    lexer_code[file_size] = 0;
-
-
-    if (show_stages)
-        printf("Lexing Tokens...\n");
-
-    Lexer lexer = create_lexer();
-    load_lexer_code(&lexer, lexer_code, file_size);
-
-    TokenArray token_array = lexer_tokenize(&lexer);
-
-    if (lexer.error_list.count > 0) {
-        for (int32_t i = 0; i < lexer.error_list.count; ++i) {
-            const Error* error = &lexer.error_list.errors[i];
-            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
-        }
-
-        free_token_array(&token_array);
-        free_lexer(&lexer);
-
-        free(lexer_code);
-        lexer_code = NULL;
-        return;
-    }
-
-
-    if (show_tokens) {
-        printf("\n==== TOKENS ====\n");
-        print_token_array(&token_array);
-    }
-
-
-    /* Parser Stage */
-    if (show_stages)
-        printf("\nParsing AST...\n");
-
-    Parser parser = create_parser(token_array);
-    Node result = parse_tokens(&parser);
-
-    if (parser.error) {
-        printf("%ld:%ld: %s\n", parser.errpos.line + 1, parser.errpos.column + 1, parser_get_error(&parser));
-
-        free_token_array(&token_array);
-        free_lexer(&lexer);
-
-        free(lexer_code);
-        lexer_code = NULL;
-        return;
-    }
-
-    if (show_ast) {
-        printf("\n==== AST ====\n");
-        print_node_tree(&result, 0);
-    }
-
-    /* Semantics Stage */
-    if (show_stages)
-        printf("Processing semantics...\n");
-
-    Scope scope = create_scope(NULL);
-    Semantics semantics = create_semantics(&scope);
-    process_semantics(&semantics, &result);
-
-    if (semantics.error_list.count > 0) {
-        for (int32_t i = 0; i < semantics.error_list.count; ++i) {
-            const Error* error = &semantics.error_list.errors[i];
-            printf("%ld:%ld: %s\n", error->position.line + 1, error->position.column + 1, error->errmsg);
-        }
-
-        free_token_array(&token_array);
-        free_lexer(&lexer);
-
-        free(lexer_code);
-        lexer_code = NULL;
-        return;
-    }
-
-    /* AAR Stage */
-    if (show_stages)
-        printf("Parsing AAR...\n");
-
-    AARParser aar_parser = create_aar_parser(&result);
-    aar_parser_parse(&aar_parser);
-
-    /* Assembly Generation Stage */
-    if (show_stages)
-        printf("Generating Assembly code...\n");
-
-    AsmGen asm_gen = create_asm_gen(&aar_parser.result);
-    asm_gen_nasm(&asm_gen);
-
-    if (show_asm) {
-        printf("\n==== Assembly ====\n");
-        printf("%s", asm_gen.result);
-    }
-
-    free_asm_gen(&asm_gen);
-    free_aar_parser(&aar_parser);
-    free_parser(&parser);
-    free_token_array(&token_array);
-    free_lexer(&lexer);
-
-    free(lexer_code);
-    lexer_code = NULL;
 }
 
 void interpret(int32_t argc, char* argv[]) {
@@ -216,7 +87,7 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
-    if (show_tokens) print_tokens(&token_array);
+    // if (show_tokens) print_tokens(&token_array);
 
 
 
@@ -238,7 +109,7 @@ void interpret(int32_t argc, char* argv[]) {
         return;
     }
 
-    if (show_ast) print_ast(&ast);
+    // if (show_ast) print_ast(&ast);
 
 
 
@@ -319,7 +190,15 @@ int32_t main(int32_t argc, char* argv[]) {
     }
 
     if (strcmp(argv[1], "compile") == 0) {
-        compile(argc, argv);
+        CompileOptions compile_options = (CompileOptions) {
+            .file = argv[2],
+            .show_stages = args_contains(argc, argv, "--p-stages"),
+            .show_tokens = args_contains(argc, argv, "--p-tokens"),
+            .show_ast    = args_contains(argc, argv, "--p-ast"),
+            .show_ir     = args_contains(argc, argv, "--p-ir"),
+            .show_asm    = args_contains(argc, argv, "--p-asm"),
+        };
+        compile(&compile_options);
     } else if (strcmp(argv[1], "interpret") == 0) {
         interpret(argc, argv);
     } else {
