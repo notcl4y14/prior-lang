@@ -70,15 +70,25 @@ LLVMValueRef build_bin_expr(IRBuilder* b, const Node* node) {
 LLVMValueRef build_call_expr(IRBuilder* b, const Node* node) {
     const NCallExpr* data = &node->data.call_expr;
 
-    LLVMTypeRef  calleeT = LLVMGetTypeByName(b->llvm_module, data->member->data.ident_lit.value);
-    LLVMValueRef calleeV = LLVMGetNamedFunction(b->llvm_module, data->member->data.ident_lit.value);
+    // printf("TEST");
+    const char* func_ident = data->member->data.ident_lit.value;
+    // fprintf(stderr, "Function %s not found\n", func_ident);
 
-    assert(calleeT != NULL);
-    assert(calleeV != NULL);
+    LLVMValueRef  func = LLVMGetNamedFunction(b->llvm_module, func_ident);
+    LLVMTypeRef   func_type = LLVMGlobalGetValueType(func);
+    // LLVMTypeRef   func_return_type = LLVMGetReturnType(func_type);
 
-    if (data->args.count != LLVMCountParamTypes(calleeT)) {
-        assert(false);
-    }
+    // LLVMTypeRef func_params[] = { LLVMVoidTypeInContext(b->llvm_context) };
+    // LLVMTypeRef calleeT = LLVMFunctionType(
+    //     LLVMInt32TypeInContext(b->llvm_context), func_params, 0, 0);
+    // LLVMValueRef calleeV = LLVMGetNamedFunction(b->llvm_module, func_ident);
+
+    // assert(calleeT != NULL);
+    // assert(calleeV != NULL);
+
+    // if (data->args.count != LLVMCountParamTypes(calleeT)) {
+    //     assert(false);
+    // }
 
     LLVMValueRef args[data->args.count];
 
@@ -86,7 +96,7 @@ LLVMValueRef build_call_expr(IRBuilder* b, const Node* node) {
         args[i] = build_node(b, &data->args.nodes[i]);
     }
 
-    return LLVMBuildCall2(b->llvm_builder, calleeT, calleeV, args, data->args.count, "calltmp");
+    return LLVMBuildCall2(b->llvm_builder, func_type, func, args, data->args.count, "calltmp");
 }
 
 LLVMValueRef build_ret_stat(IRBuilder* b, const Node* node) {
@@ -106,7 +116,6 @@ LLVMValueRef build_var_stat(IRBuilder* b, const Node* node) {
         if (vn[i] == NULL) {
             vn[i] = var_ident;
             vv[i] = var_ptr;
-            // printf("%s\n", vn[i]);
             break;
         }
     }
@@ -126,7 +135,10 @@ LLVMValueRef build_fn_stat(IRBuilder* b, const Node* node) {
     LLVMTypeRef func_type     = LLVMFunctionType(
         LLVMInt32TypeInContext(b->llvm_context), func_params, 0, 0);
 
+    // printf("Declaring function %s\n", func_ident);
+
     if (LLVMGetTypeByName(b->llvm_module, func_ident) != NULL) {
+        printf("Function %s already exists", func_ident);
         assert(false);
     }
 
